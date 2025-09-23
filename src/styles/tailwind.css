@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add dark mode support for existing colors */
+@layer base {
+  :root {
+    /* Light mode colors (keep existing) */
+    --color-primary: #3b82f6;
+    --color-primary-50: #eff6ff;
+    --color-primary-100: #dbeafe;
+    --color-primary-500: #3b82f6;
+    --color-primary-700: #1d4ed8;
+    
+    --color-secondary: #6b7280;
+    --color-secondary-100: #f3f4f6;
+    --color-secondary-500: #6b7280;
+    
+    --color-accent: #f59e0b;
+    --color-background: #ffffff;
+    --color-surface: #ffffff;
+    
+    --color-text-primary: #111827;
+    --color-text-secondary: #6b7280;
+    
+    --color-border: #e5e7eb;
+    --color-border-focus: #3b82f6;
+  }
+
+  .dark {
+    /* Dark mode colors */
+    --color-primary: #60a5fa;
+    --color-primary-50: #1e3a8a;
+    --color-primary-100: #1e40af;
+    --color-primary-500: #60a5fa;
+    --color-primary-700: #93c5fd;
+    
+    --color-secondary: #9ca3af;
+    --color-secondary-100: #374151;
+    --color-secondary-500: #9ca3af;
+    
+    --color-accent: #fbbf24;
+    --color-background: #111827;
+    --color-surface: #1f2937;
+    
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    
+    --color-border: #374151;
+    --color-border-focus: #60a5fa;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 ease-out;
+  }
+.btn-secondary   {
+    @apply bg-secondary-100 focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-out;
+  }
+
+  .card {
+    @apply bg-surface border border-border rounded-lg shadow-sm;
+  }
+
+  .input-field {
+    @apply border border-border rounded-md px-3 py-2 focus:border-border-focus focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 ease-out;
+  }
+.skeleton  {
+    @apply animate-pulse bg-gradient-to-r via-secondary-100 bg-[length:200%_100%];
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .micro-interaction {
+    @apply transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .toast-slide-in {
+    animation: toast-slide-in 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes toast-slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+}
+
+  .progressive-disclosure  {
+    @apply transition-all duration-300;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .shadow-elevation-1 {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-elevation-2 {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-elevation-3 {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-elevation-4 {
+    box-shadow: 0 16px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .shadow-elevation-5 {
+    box-shadow: 0 24px 32px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
