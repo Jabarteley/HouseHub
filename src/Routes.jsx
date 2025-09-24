@@ -5,7 +5,7 @@ import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 
 // Page imports
-import Homepage from "pages/homepage";
+import Homepage from "../src/pages/hompage";
 import PropertyListings from "pages/property-listings";
 import PropertyDetails from "pages/property-details";
 import AgentDashboard from "pages/agent-dashboard";

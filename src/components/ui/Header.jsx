@@ -111,7 +111,7 @@ const Header = () => {
                 <Icon name="Home" size={20} color="white" />
               </div>
               <span className="text-xl font-semibold text-text-primary font-heading">
-                EstateHub
+                HouseHub
               </span>
             </Link>
           </div>
