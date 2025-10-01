@@ -1,6 +1,6 @@
 // src/pages/agent-dashboard/components/QuickListingForm.jsx
 import React, { useState } from 'react';
-import Icon from '../../../components/AppIcon';
+import Icon from '../../../../components/AppIcon';
 
 const QuickListingForm = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({

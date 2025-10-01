@@ -61,9 +61,7 @@ const SortDropdown = ({ value, onChange }) => {
         <Icon 
           name="ChevronDown" 
           size={16} 
-          className={`text-text-secondary transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
+          className={`text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       {isOpen && (
@@ -75,10 +73,7 @@ const SortDropdown = ({ value, onChange }) => {
                 key={option?.value}
                 onClick={() => handleSelect(option?.value)}
                 className={`w-full flex items-center space-x-3 px-4 py-2 text-sm text-left
-                           transition-colors duration-200 ${
-                  option?.value === value
-                    ? 'bg-primary-100 text-primary' :'text-text-secondary hover:text-text-primary hover:bg-secondary-100'
-                }`}
+                           transition-colors duration-200 ${option?.value === value ? 'bg-primary-100 text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-secondary-100'}`}
               >
                 <Icon 
                   name={option?.icon} 

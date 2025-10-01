@@ -10,27 +10,27 @@ const Footer = () => {
       title: "For Buyers",
       links: [
         { label: "Search Properties", path: "/property-listings" },
-        { label: "Mortgage Calculator", path: "/mortgage-calculator" },
-        { label: "Buyer\'s Guide", path: "/buyers-guide" },
-        { label: "Neighborhood Info", path: "/neighborhoods" }
+        { label: "Mortgage Calculator", path: "/coming-soon" },
+        { label: "Buyer's Guide", path: "/coming-soon" },
+        { label: "Neighborhood Info", path: "/coming-soon" }
       ]
     },
     {
       title: "For Sellers",
       links: [
-        { label: "List Your Property", path: "/list-property" },
-        { label: "Home Valuation", path: "/home-valuation" },
-        { label: "Seller\'s Guide", path: "/sellers-guide" },
-        { label: "Market Reports", path: "/market-reports" }
+        { label: "List Your Property", path: "/coming-soon" },
+        { label: "Home Valuation", path: "/coming-soon" },
+        { label: "Seller's Guide", path: "/coming-soon" },
+        { label: "Market Reports", path: "/coming-soon" }
       ]
     },
     {
       title: "For Agents",
       links: [
-        { label: "Agent Dashboard", path: "/agent-dashboard" },
-        { label: "Join Our Team", path: "/join-team" },
-        { label: "Agent Resources", path: "/agent-resources" },
-        { label: "Training Center", path: "/training" }
+        { label: "Agent Dashboard", path: "/dashboard" },
+        { label: "Join Our Team", path: "/coming-soon" },
+        { label: "Agent Resources", path: "/coming-soon" },
+        { label: "Training Center", path: "/coming-soon" }
       ]
     },
     {
@@ -52,7 +52,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-secondary-700 text-white">
+    <footer className="bg-secondary-700 text-text-primary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-12 lg:py-16">
@@ -65,22 +65,22 @@ const Footer = () => {
                 </div>
                 <span className="text-xl font-semibold font-heading">HouseHub</span>
               </div>
-              <p className="text-secondary-300 mb-6 leading-relaxed">
+              <p className="text-text-secondary mb-6 leading-relaxed">
                 Your trusted partner in real estate. We connect buyers, sellers, and agents 
                 to create successful property transactions across the country.
               </p>
               
               {/* Contact Info */}
               <div className="space-y-2 mb-6">
-                <div className="flex items-center space-x-2 text-secondary-300">
+                <div className="flex items-center space-x-2 text-text-secondary">
                   <Icon name="Phone" size={16} />
                   <span>+1 (555) 123-4567</span>
                 </div>
-                <div className="flex items-center space-x-2 text-secondary-300">
+                <div className="flex items-center space-x-2 text-text-secondary">
                   <Icon name="Mail" size={16} />
                   <span>info@estatehub.com</span>
                 </div>
-                <div className="flex items-center space-x-2 text-secondary-300">
+                <div className="flex items-center space-x-2 text-text-secondary">
                   <Icon name="MapPin" size={16} />
                   <span>123 Real Estate Ave, City, State 12345</span>
                 </div>
@@ -107,7 +107,7 @@ const Footer = () => {
             {/* Footer Links */}
             {footerSections?.map((section) => (
               <div key={section?.title}>
-                <h3 className="text-lg font-semibold mb-4 text-white">
+                <h3 className="text-lg font-semibold mb-4 text-text-primary">
                   {section?.title}
                 </h3>
                 <ul className="space-y-2">
@@ -115,7 +115,7 @@ const Footer = () => {
                     <li key={link?.label}>
                       <Link
                         to={link?.path}
-                        className="text-secondary-300 hover:text-white transition-colors duration-200"
+                        className="text-text-secondary hover:text-text-primary transition-colors duration-200"
                       >
                         {link?.label}
                       </Link>
@@ -131,8 +131,8 @@ const Footer = () => {
         <div className="py-8 border-t border-secondary-600">
           <div className="flex flex-col lg:flex-row items-center justify-between">
             <div className="mb-4 lg:mb-0">
-              <h3 className="text-lg font-semibold mb-2">Stay Updated</h3>
-              <p className="text-secondary-300">
+              <h3 className="text-lg font-semibold mb-2 text-text-primary">Stay Updated</h3>
+              <p className="text-text-secondary">
                 Get the latest property listings and market insights delivered to your inbox.
               </p>
             </div>
@@ -141,7 +141,7 @@ const Footer = () => {
                 type="email"
                 placeholder="Enter your email"
                 className="flex-1 lg:w-64 px-4 py-2 bg-secondary-600 border border-secondary-500 
-                         rounded-l-md text-white placeholder-secondary-300
+                         rounded-l-md text-text-primary placeholder-text-secondary
                          focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
               />
               <button
@@ -156,31 +156,31 @@ const Footer = () => {
         {/* Bottom Footer */}
         <div className="py-6 border-t border-secondary-600">
           <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="text-secondary-300 text-sm mb-4 md:mb-0">
+            <div className="text-text-secondary text-sm mb-4 md:mb-0">
               © {currentYear} EstateHub. All rights reserved.
             </div>
             <div className="flex flex-wrap items-center space-x-6 text-sm">
               <Link 
                 to="/privacy" 
-                className="text-secondary-300 hover:text-white transition-colors duration-200"
+                className="text-text-secondary hover:text-text-primary transition-colors duration-200"
               >
                 Privacy Policy
               </Link>
               <Link 
                 to="/terms" 
-                className="text-secondary-300 hover:text-white transition-colors duration-200"
+                className="text-text-secondary hover:text-text-primary transition-colors duration-200"
               >
                 Terms of Service
               </Link>
               <Link 
                 to="/cookies" 
-                className="text-secondary-300 hover:text-white transition-colors duration-200"
+                className="text-text-secondary hover:text-text-primary transition-colors duration-200"
               >
                 Cookie Policy
               </Link>
               <Link 
                 to="/accessibility" 
-                className="text-secondary-300 hover:text-white transition-colors duration-200"
+                className="text-text-secondary hover:text-text-primary transition-colors duration-200"
               >
                 Accessibility
               </Link>

@@ -1,6 +1,6 @@
 // src/pages/agent-dashboard/components/QuickActions.jsx
 import React from 'react';
-import Icon from '../../../components/AppIcon';
+import Icon from '../../../../components/AppIcon';
 
 const QuickActions = ({ onQuickListing }) => {
   const actions = [

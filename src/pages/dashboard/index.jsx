@@ -1,45 +1,43 @@
+
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminDashboard from './AdminDashboard';
-import LandlordDashboard from './LandlordDashboard';
 import AgentDashboard from './AgentDashboard';
+import LandlordDashboard from './LandlordDashboard';
 import StudentDashboard from './StudentDashboard';
 import LoadingState from './components/LoadingState';
 
 const Dashboard = () => {
-  const { userProfile, profileLoading, loading } = useAuth();
+  const { userProfile, loading, isAdmin, isAgent, isLandlord, isStudent } = useAuth();
 
-  if (loading || profileLoading) {
+  if (loading) {
     return <LoadingState />;
   }
 
-  if (!userProfile) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-text-primary mb-2">
-            Profile Not Found
-          </h2>
-          <p className="text-text-secondary">
-            Unable to load your profile. Please try refreshing the page.
-          </p>
-        </div>
-      </div>
-    );
+  if (isAdmin) {
+    return <AdminDashboard />;
   }
 
-  // Route to appropriate dashboard based on user role
-  switch (userProfile?.role) {
-    case 'admin':
-      return <AdminDashboard />;
-    case 'landlord':
-      return <LandlordDashboard />;
-    case 'agent':
-      return <AgentDashboard />;
-    case 'student':
-    default:
-      return <StudentDashboard />;
+  if (isAgent) {
+    return <AgentDashboard />;
   }
+
+  if (isLandlord) {
+    return <LandlordDashboard />;
+  }
+
+  if (isStudent) {
+    return <StudentDashboard />;
+  }
+
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold">Unauthorized</h1>
+        <p className="mt-4">You do not have permission to view this page.</p>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 
-const FilterPanel = ({ 
-  isOpen, 
-  onClose, 
-  onFilterChange, 
-  initialFilters = {} 
+const FilterPanel = ({
+  isOpen,
+  onClose,
+  onFilterChange,
+  initialFilters = {}
 }) => {
   const [filters, setFilters] = useState({
     query: '',
@@ -170,7 +170,7 @@ const FilterPanel = ({
                     placeholder="Search properties..."
                     className="block w-full pl-10 pr-3 py-2 border border-border rounded-md
                              focus:border-border-focus focus:ring-1 focus:ring-primary-500
-                             transition-all duration-200 ease-out text-sm"
+                             transition-all duration-200 ease-out text-sm bg-background text-text-primary"
                   />
                 </div>
               </div>
@@ -191,7 +191,7 @@ const FilterPanel = ({
                     placeholder="City, neighborhood, or ZIP"
                     className="block w-full pl-10 pr-3 py-2 border border-border rounded-md
                              focus:border-border-focus focus:ring-1 focus:ring-primary-500
-                             transition-all duration-200 ease-out text-sm"
+                             transition-all duration-200 ease-out text-sm bg-background text-text-primary"
                   />
                 </div>
               </div>
@@ -206,9 +206,7 @@ const FilterPanel = ({
                   <Icon 
                     name="ChevronDown" 
                     size={16} 
-                    className={`text-text-secondary transition-transform duration-200 ${
-                      expandedSections?.propertyType ? 'rotate-180' : ''
-                    }`}
+                    className={`text-text-secondary transition-transform duration-200 ${expandedSections?.propertyType ? 'rotate-180' : ''}`}
                   />
                 </button>
                 
@@ -222,7 +220,7 @@ const FilterPanel = ({
                           value={type?.value}
                           checked={filters?.propertyType === type?.value}
                           onChange={(e) => handleFilterChange('propertyType', e?.target?.value)}
-                          className="w-4 h-4 text-primary border-border focus:ring-primary-500"
+                          className="w-4 h-4 text-primary border-border focus:ring-primary-500 bg-background"
                         />
                         <span className="ml-2 text-sm text-text-secondary">{type?.label}</span>
                       </label>
@@ -241,9 +239,7 @@ const FilterPanel = ({
                   <Icon 
                     name="ChevronDown" 
                     size={16} 
-                    className={`text-text-secondary transition-transform duration-200 ${
-                      expandedSections?.price ? 'rotate-180' : ''
-                    }`}
+                    className={`text-text-secondary transition-transform duration-200 ${expandedSections?.price ? 'rotate-180' : ''}`}
                   />
                 </button>
                 
@@ -255,10 +251,7 @@ const FilterPanel = ({
                         <button
                           key={index}
                           onClick={() => handlePriceRangeSelect(range)}
-                          className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors duration-200 ${
-                            filters?.minPrice === range?.min && filters?.maxPrice === range?.max
-                              ? 'bg-primary-100 text-primary border border-primary-500' :'text-text-secondary hover:bg-secondary-100'
-                          }`}
+                          className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors duration-200 ${filters?.minPrice === range?.min && filters?.maxPrice === range?.max ? 'bg-primary-100 text-primary border border-primary-500' : 'text-text-secondary hover:bg-secondary-100'}`}
                         >
                           {range?.label}
                         </button>
@@ -275,8 +268,7 @@ const FilterPanel = ({
                             value={filters?.minPrice}
                             onChange={(e) => handleFilterChange('minPrice', e?.target?.value)}
                             placeholder="$0"
-                            className="w-full px-3 py-2 border border-border rounded-md text-sm
-                                     focus:border-border-focus focus:ring-1 focus:ring-primary-500"
+                            className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background text-text-primary"
                           />
                         </div>
                         <div>
@@ -286,8 +278,7 @@ const FilterPanel = ({
                             value={filters?.maxPrice}
                             onChange={(e) => handleFilterChange('maxPrice', e?.target?.value)}
                             placeholder="Any"
-                            className="w-full px-3 py-2 border border-border rounded-md text-sm
-                                     focus:border-border-focus focus:ring-1 focus:ring-primary-500"
+                            className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background text-text-primary"
                           />
                         </div>
                       </div>
@@ -306,9 +297,7 @@ const FilterPanel = ({
                   <Icon 
                     name="ChevronDown" 
                     size={16} 
-                    className={`text-text-secondary transition-transform duration-200 ${
-                      expandedSections?.bedsBaths ? 'rotate-180' : ''
-                    }`}
+                    className={`text-text-secondary transition-transform duration-200 ${expandedSections?.bedsBaths ? 'rotate-180' : ''}`}
                   />
                 </button>
                 
@@ -321,10 +310,7 @@ const FilterPanel = ({
                           <button
                             key={bed}
                             onClick={() => handleFilterChange('bedrooms', bed)}
-                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                              filters?.bedrooms === bed
-                                ? 'bg-primary text-white' :'bg-secondary-100 text-text-secondary hover:bg-secondary-200'
-                            }`}
+                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${filters?.bedrooms === bed ? 'bg-primary text-white' : 'bg-secondary-100 text-text-secondary hover:bg-secondary-200'}`}
                           >
                             {bed || 'Any'}
                           </button>
@@ -339,10 +325,7 @@ const FilterPanel = ({
                           <button
                             key={bath}
                             onClick={() => handleFilterChange('bathrooms', bath)}
-                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                              filters?.bathrooms === bath
-                                ? 'bg-primary text-white' :'bg-secondary-100 text-text-secondary hover:bg-secondary-200'
-                            }`}
+                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${filters?.bathrooms === bath ? 'bg-primary text-white' : 'bg-secondary-100 text-text-secondary hover:bg-secondary-200'}`}
                           >
                             {bath || 'Any'}
                           </button>
@@ -363,9 +346,7 @@ const FilterPanel = ({
                   <Icon 
                     name="ChevronDown" 
                     size={16} 
-                    className={`text-text-secondary transition-transform duration-200 ${
-                      expandedSections?.size ? 'rotate-180' : ''
-                    }`}
+                    className={`text-text-secondary transition-transform duration-200 ${expandedSections?.size ? 'rotate-180' : ''}`}
                   />
                 </button>
                 
@@ -379,25 +360,23 @@ const FilterPanel = ({
                           value={filters?.minSqft}
                           onChange={(e) => handleFilterChange('minSqft', e?.target?.value)}
                           placeholder="Any"
-                          className="w-full px-3 py-2 border border-border rounded-md text-sm
-                                   focus:border-border-focus focus:ring-1 focus:ring-primary-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-secondary mb-1">Max Sqft</label>
-                        <input
-                          type="number"
-                          value={filters?.maxSqft}
-                          onChange={(e) => handleFilterChange('maxSqft', e?.target?.value)}
-                          placeholder="Any"
-                          className="w-full px-3 py-2 border border-border rounded-md text-sm
-                                   focus:border-border-focus focus:ring-1 focus:ring-primary-500"
-                        />
+                          className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background text-text-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-text-secondary mb-1">Max Sqft</label>
+                          <input
+                            type="number"
+                            value={filters?.maxSqft}
+                            onChange={(e) => handleFilterChange('maxSqft', e?.target?.value)}
+                            placeholder="Any"
+                            className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background text-text-primary"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
               {/* Amenities */}
               <div>
@@ -409,9 +388,7 @@ const FilterPanel = ({
                   <Icon 
                     name="ChevronDown" 
                     size={16} 
-                    className={`text-text-secondary transition-transform duration-200 ${
-                      expandedSections?.amenities ? 'rotate-180' : ''
-                    }`}
+                    className={`text-text-secondary transition-transform duration-200 ${expandedSections?.amenities ? 'rotate-180' : ''}`}
                   />
                 </button>
                 
@@ -423,7 +400,7 @@ const FilterPanel = ({
                           type="checkbox"
                           checked={filters?.amenities?.includes(amenity)}
                           onChange={() => handleAmenityToggle(amenity)}
-                          className="w-4 h-4 text-primary border-border rounded focus:ring-primary-500"
+                          className="w-4 h-4 text-primary border-border rounded focus:ring-primary-500 bg-background"
                         />
                         <span className="ml-2 text-sm text-text-secondary">{amenity}</span>
                       </label>
