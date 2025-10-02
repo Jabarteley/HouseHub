@@ -40,11 +40,10 @@ const PerformanceMetrics = () => {
           .gte('created_at', thirtyDaysAgo.toISOString()); // Note: This assumes created_at is updated on status change
 
         // Fetch total revenue/commission with better error handling
-        let performanceData = null;
         let commissionValue = 0;
         
         try {
-          // Try to get data with a more general query
+          // Try direct table query first as it's more reliable
           const { data: directData, error: directError } = await supabase
             .from('agent_performance')
             .select('total_commission')
@@ -52,26 +51,13 @@ const PerformanceMetrics = () => {
             .single();
             
           if (!directError && directData) {
-            performanceData = directData;
             commissionValue = directData.total_commission || 0;
           } else if (directError && directError.code !== 'PGRST116') { // Record not found is OK
             console.warn('Direct query error:', directError);
-            // Try the RPC approach as fallback
-            try {
-              const { data: rpcData, error: rpcError } = await supabase.rpc('get_agent_performance_safe', { 
-                p_agent_id: user.id 
-              });
-              
-              if (!rpcError && rpcData && rpcData.length > 0) {
-                performanceData = rpcData[0];
-                commissionValue = rpcData[0].total_commission || 0;
-              }
-            } catch (rpcError) {
-              console.warn('RPC query also failed:', rpcError);
-            }
           }
         } catch (error) {
           console.warn('Error fetching agent performance:', error);
+          commissionValue = 0;
         }
 
         setMetrics([
