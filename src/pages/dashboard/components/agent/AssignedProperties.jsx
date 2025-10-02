@@ -33,7 +33,7 @@ const AssignedProperties = () => {
           landlord_id,
           user_profiles!properties_landlord_id_fkey (full_name)
         `)
-        .or('agent_id.eq.' + user.id + ',owner_gave_access.eq.true') // Properties where agent_id matches or owner gave access
+        .eq('agent_id', user.id) // Properties specifically assigned to this agent
         .order('created_at', { ascending: false });
 
       if (error) throw error;

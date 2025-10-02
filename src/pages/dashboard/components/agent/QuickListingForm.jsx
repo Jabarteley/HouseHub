@@ -1,20 +1,23 @@
 // src/pages/agent-dashboard/components/QuickListingForm.jsx
 import React, { useState } from 'react';
 import Icon from '../../../../components/AppIcon';
+import { supabase } from '../../../../lib/supabase';
+import { useAuth } from '../../../../contexts/AuthContext';
 
 const QuickListingForm = ({ onClose, onSubmit }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     address: '',
     city: '',
     state: '',
-    zipCode: '',
+    zip_code: '',
     price: '',
-    propertyType: '',
+    property_type: 'House',
     bedrooms: '',
     bathrooms: '',
-    squareFootage: '',
+    area_sqft: '',
     description: '',
-    mlsIntegration: true
+    status: 'draft'
   });
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,9 +71,9 @@ const QuickListingForm = ({ onClose, onSubmit }) => {
     if (!formData?.address?.trim()) newErrors.address = 'Address is required';
     if (!formData?.city?.trim()) newErrors.city = 'City is required';
     if (!formData?.state?.trim()) newErrors.state = 'State is required';
-    if (!formData?.zipCode?.trim()) newErrors.zipCode = 'ZIP code is required';
+    if (!formData?.zip_code?.trim()) newErrors.zipCode = 'ZIP code is required';
     if (!formData?.price?.trim()) newErrors.price = 'Price is required';
-    if (!formData?.propertyType) newErrors.propertyType = 'Property type is required';
+    if (!formData?.property_type) newErrors.property_type = 'Property type is required';
     if (!formData?.bedrooms?.trim()) newErrors.bedrooms = 'Bedrooms is required';
     if (!formData?.bathrooms?.trim()) newErrors.bathrooms = 'Bathrooms is required';
     
@@ -87,18 +90,63 @@ const QuickListingForm = ({ onClose, onSubmit }) => {
     e?.preventDefault();
     
     if (!validateForm()) return;
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
     
     setIsSubmitting(true);
     
     try {
-      const submissionData = {
-        ...formData,
-        photos: photos?.map(p => p?.file)
-      };
-      
-      await onSubmit?.(submissionData);
+      // 1. First create the property record with the agent as the agent_id
+      const { data: propertyData, error: propertyError } = await supabase
+        .from('properties')
+        .insert([{
+          ...formData,
+          agent_id: user.id, // Set the agent as the property agent
+          status: 'draft' // Default to draft until finalized
+        }])
+        .select()
+        .single();
+
+      if (propertyError) throw propertyError;
+
+      // 2. If photos were uploaded, process them
+      if (photos.length > 0) {
+        // Create file names and upload to storage
+        const uploadPromises = photos.map(async (photo, index) => {
+          const fileExt = photo.file.name.split('.').pop();
+          const fileName = `${user.id}/${propertyData.id}/${Date.now()}_${index}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('property-images')
+            .upload(fileName, photo.file, { upsert: true });
+
+          if (uploadError) throw uploadError;
+
+          // Return the path for database insertion
+          return {
+            property_id: propertyData.id,
+            image_url: supabase.storage.from('property-images').getPublicUrl(fileName).data.publicUrl,
+            is_primary: index === 0 // Set first image as primary
+          };
+        });
+
+        const imageRecords = await Promise.all(uploadPromises);
+
+        // 3. Insert image records into the property_images table
+        const { error: imagesError } = await supabase
+          .from('property_images')
+          .insert(imageRecords);
+
+        if (imagesError) throw imagesError;
+      }
+
+      // Success - call the parent callback
+      await onSubmit?.(propertyData);
     } catch (error) {
-      console.error('Error submitting listing:', error);
+      console.error('Error creating property listing:', error);
+      alert('Error creating property listing: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -196,6 +244,25 @@ const QuickListingForm = ({ onClose, onSubmit }) => {
                       <p className="text-error text-xs mt-1">{errors?.state}</p>
                     )}
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">
+                      ZIP Code *
+                    </label>
+                    <input
+                      type="text"
+                      name="zip_code"
+                      value={formData?.zip_code}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 ${
+                        errors?.zipCode ? 'border-error' : 'border-border focus:border-border-focus'
+                      }`}
+                      placeholder="94107"
+                    />
+                    {errors?.zipCode && (
+                      <p className="text-error text-xs mt-1">{errors?.zipCode}</p>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -227,20 +294,21 @@ const QuickListingForm = ({ onClose, onSubmit }) => {
                       Property Type *
                     </label>
                     <select
-                      name="propertyType"
-                      value={formData?.propertyType}
+                      name="property_type"
+                      value={formData?.property_type}
                       onChange={handleInputChange}
                       className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 ${
-                        errors?.propertyType ? 'border-error' : 'border-border focus:border-border-focus'
+                        errors?.property_type ? 'border-error' : 'border-border focus:border-border-focus'
                       }`}
                     >
-                      <option value="">Select type</option>
-                      {propertyTypes?.map(type => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
+                      <option value="House">House</option>
+                      <option value="Apartment">Apartment</option>
+                      <option value="Condo">Condo</option>
+                      <option value="Townhouse">Townhouse</option>
+                      <option value="Land">Land</option>
                     </select>
-                    {errors?.propertyType && (
-                      <p className="text-error text-xs mt-1">{errors?.propertyType}</p>
+                    {errors?.property_type && (
+                      <p className="text-error text-xs mt-1">{errors?.property_type}</p>
                     )}
                   </div>
                   
@@ -283,6 +351,44 @@ const QuickListingForm = ({ onClose, onSubmit }) => {
                     {errors?.bathrooms && (
                       <p className="text-error text-xs mt-1">{errors?.bathrooms}</p>
                     )}
+                  </div>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">
+                      Area (sqft)
+                    </label>
+                    <input
+                      type="number"
+                      name="area_sqft"
+                      value={formData?.area_sqft}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 ${
+                        errors?.area_sqft ? 'border-error' : 'border-border focus:border-border-focus'
+                      }`}
+                      placeholder="1200"
+                      min="0"
+                    />
+                    {errors?.area_sqft && (
+                      <p className="text-error text-xs mt-1">{errors?.area_sqft}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      value={formData?.status}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
                   </div>
                 </div>
               </div>

@@ -14,12 +14,14 @@ import LeadManagement from './components/agent/LeadManagement';
 import UpcomingShowings from './components/agent/UpcomingShowings';
 import AnalyticsSection from './components/agent/AnalyticsSection';
 import QuickListingForm from './components/agent/QuickListingForm';
+import PropertyDiscovery from './components/agent/PropertyDiscovery';
 
 const AgentDashboard = () => {
   const { user, userProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [showQuickListingForm, setShowQuickListingForm] = useState(false);
   const [selectedListings, setSelectedListings] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if(user) {
@@ -37,9 +39,10 @@ const AgentDashboard = () => {
   };
 
   const handleListingSubmit = (listingData) => {
-    console.log('New listing data:', listingData);
+    console.log('New listing created:', listingData);
     setShowQuickListingForm(false);
-    // Implement listing creation logic
+    // Trigger a refresh of all components by updating the refresh trigger
+    setRefreshTrigger(prev => prev + 1);
   };
 
   if (isLoading) {
@@ -89,6 +92,9 @@ const AgentDashboard = () => {
           {/* Performance Metrics */}
           <PerformanceMetrics />
 
+          {/* Property Discovery */}
+          <PropertyDiscovery />
+
           {/* Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Main Content Area */}
@@ -97,10 +103,11 @@ const AgentDashboard = () => {
               <QuickActions onQuickListing={handleQuickListing} />
               
               {/* Assigned Properties */}
-              <AssignedProperties />
+              <AssignedProperties key={`assigned-${refreshTrigger}`} />
               
               {/* Active Listings Table */}
               <ActiveListings 
+                key={`active-${refreshTrigger}`}
                 selectedListings={selectedListings}
                 onSelectionChange={setSelectedListings}
                 onBulkAction={handleBulkAction}
@@ -116,19 +123,19 @@ const AgentDashboard = () => {
               <RecentActivity />
               
               {/* Client List */}
-              <ClientList />
+              <ClientList key={`client-list-${refreshTrigger}`} />
               
               {/* Commission Ledger */}
-              <CommissionLedger />
+              <CommissionLedger key={`commission-${refreshTrigger}`} />
               
               {/* Calendar Viewings */}
-              <CalendarViewings />
+              <CalendarViewings key={`calendar-${refreshTrigger}`} />
               
               {/* Lead Management */}
-              <LeadManagement />
+              <LeadManagement key={`lead-mgmt-${refreshTrigger}`} />
               
               {/* Upcoming Showings */}
-              <UpcomingShowings />
+              <UpcomingShowings key={`upcoming-showings-${refreshTrigger}`} />
             </div>
           </div>
         </div>

@@ -31,6 +31,7 @@ const StudentDashboard = () => {
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
   const [paymentProperty, setPaymentProperty] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -134,7 +135,8 @@ const StudentDashboard = () => {
 
   const handleShowingScheduled = () => {
     setShowScheduleForm(false);
-    fetchDashboardData(); // Refresh the data
+    // Trigger a refresh of all components by updating the refresh trigger
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handlePropertySelect = (property) => {
@@ -202,20 +204,21 @@ const StudentDashboard = () => {
           </div>
 
           {/* Stats */}
-          <StudentStats stats={stats} />
+          <StudentStats stats={stats} key={`stats-${refreshTrigger}`} />
 
           {/* Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content Area */}
             <div className="lg:col-span-2 space-y-8">
               {/* Property Search */}
-              <PropertySearch onPropertySelect={handlePropertySelect} />
+              <PropertySearch key={`search-${refreshTrigger}`} onPropertySelect={handlePropertySelect} />
               
               {/* Map View */}
-              <MapView onPropertySelect={handlePropertySelect} />
+              <MapView key={`map-${refreshTrigger}`} onPropertySelect={handlePropertySelect} />
               
               {/* Saved Properties */}
               <SavedProperties 
+                key={`saved-${refreshTrigger}`}
                 properties={savedProperties} 
                 onRemove={handleRemoveSavedProperty}
                 onScheduleShowing={handleScheduleShowing}
@@ -225,16 +228,16 @@ const StudentDashboard = () => {
             {/* Sidebar */}
             <div className="space-y-8">
               {/* Recent Applications */}
-              <RecentApplications applications={applications} />
+              <RecentApplications key={`apps-${refreshTrigger}`} applications={applications} />
               
               {/* Upcoming Showings */}
-              <UpcomingShowings showings={showings} />
+              <UpcomingShowings key={`showings-${refreshTrigger}`} showings={showings} />
               
               {/* Messages */}
-              <Messages />
+              <Messages key={`messages-${refreshTrigger}`} />
               
               {/* Reviews */}
-              <Reviews />
+              <Reviews key={`reviews-${refreshTrigger}`} />
             </div>
           </div>
         </div>

@@ -19,6 +19,9 @@ const SavedProperties = ({ properties, onRemove, onScheduleShowing }) => {
                         src={saved.properties.property_images?.find(img => img.is_primary)?.image_url || '/assets/Images/no_image.jpeg'}
                         alt={saved.properties.title} 
                         className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          e.target.src = '/assets/Images/no_image.jpeg';
+                        }}
                     />
                     <button onClick={() => onRemove(saved.id)} className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-1.5 rounded-full hover:bg-red-500">
                         <Icon name="Trash2" size={16} />

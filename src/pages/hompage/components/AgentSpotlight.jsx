@@ -69,7 +69,7 @@ const AgentSpotlight = () => {
                     <div className="md:w-2/3 p-8">
                       <h3 className="text-2xl font-bold text-text-primary mb-1">{agent.full_name}</h3>
                       <p className="text-primary font-medium mb-4">Top Agent</p>
-                      <p className="text-text-secondary mb-4">A top performer with {agent.performance[0]?.successful_deals || 0} successful deals.</p>
+                      <p className="text-text-secondary mb-4">A top performer with {agent.performance?.[0]?.successful_deals || 0} successful deals.</p>
                       <div className="flex flex-col sm:flex-row gap-3">
                         <button className="flex-1 bg-primary text-white px-4 py-2 rounded-md font-medium">Contact Agent</button>
                         <button className="flex-1 bg-secondary-100 text-text-primary px-4 py-2 rounded-md font-medium">View Profile</button>
