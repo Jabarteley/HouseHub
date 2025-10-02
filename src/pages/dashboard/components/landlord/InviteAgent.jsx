@@ -1,8 +1,8 @@
 // src/pages/dashboard/components/landlord/InviteAgent.jsx
 import React, { useState, useEffect } from 'react';
-import Icon from '../../../../components/AppIcon';
 import { supabase } from '../../../../lib/supabase';
 import { useAuth } from '../../../../contexts/AuthContext';
+import Icon from '../../../../components/AppIcon';
 
 const InviteAgent = ({ propertyId }) => {
   const { user } = useAuth();
@@ -13,20 +13,21 @@ const InviteAgent = ({ propertyId }) => {
   const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && propertyId) {
       fetchAvailableAgents();
     }
-  }, [user]);
+  }, [user, propertyId]);
 
   const fetchAvailableAgents = async () => {
     try {
       setLoading(true);
       
-      // Get all agents
+      // Get all agents who are not already assigned to this property
       const { data: allAgents, error: agentError } = await supabase
         .from('user_profiles')
         .select('id, full_name, avatar_url')
-        .eq('role', 'agent');
+        .eq('role', 'agent')
+        .is('archived', false); // Assuming there might be an archived field
 
       if (agentError) throw agentError;
 
@@ -47,12 +48,15 @@ const InviteAgent = ({ propertyId }) => {
       setAgents(availableAgents);
     } catch (error) {
       console.error('Error fetching agents:', error);
+      setAgents([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInvite = async () => {
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    
     if (!selectedAgent) {
       alert('Please select an agent to invite');
       return;
@@ -61,12 +65,11 @@ const InviteAgent = ({ propertyId }) => {
     try {
       setInviting(true);
       
-      // Use the invite_agent_to_property function we created in the database
-      const { error } = await supabase.rpc('invite_agent_to_property', {
-        property_id: propertyId,
-        agent_id: selectedAgent,
-        invitation_message: message || 'Property owner has invited you to represent this property.',
-        inviter_id: user.id
+      // Use the new RPC function to invite agent
+      const { error } = await supabase.rpc('invite_agent_to_property_frontend', {
+        p_property_id: propertyId,
+        p_agent_id: selectedAgent,
+        p_message: message || 'Property owner has invited you to represent this property.'
       });
 
       if (error) throw error;
@@ -99,7 +102,7 @@ const InviteAgent = ({ propertyId }) => {
         <p className="text-sm text-text-secondary mt-1">Invite an agent to represent your property</p>
       </div>
       
-      <div className="p-6 space-y-4">
+      <form onSubmit={handleInvite} className="p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-text-secondary mb-2">Select Agent</label>
           <select
@@ -122,14 +125,14 @@ const InviteAgent = ({ propertyId }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Include any special instructions or details for the agent..."
-            rows="4"
+            rows="3"
             className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm"
           />
         </div>
         
         <div className="pt-2">
           <button
-            onClick={handleInvite}
+            type="submit"
             disabled={!selectedAgent || inviting}
             className={`w-full py-2 px-4 rounded-md text-sm font-medium ${
               !selectedAgent || inviting
@@ -140,7 +143,7 @@ const InviteAgent = ({ propertyId }) => {
             {inviting ? 'Sending Invitation...' : 'Send Invitation'}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

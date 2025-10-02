@@ -10,6 +10,8 @@ import RecentInquiries from './components/landlord/RecentInquiries';
 import BookingRequests from './components/landlord/BookingRequests';
 import Earnings from './components/landlord/Earnings';
 import LeaseTemplates from './components/landlord/LeaseTemplates';
+import AgentRequests from './components/landlord/AgentRequests';
+import PropertyAgentManagement from './components/landlord/PropertyAgentManagement';
 
 const LandlordDashboard = () => {
   const { user, userProfile } = useAuth();
@@ -240,11 +242,15 @@ const LandlordDashboard = () => {
                 onImagesUploaded={fetchDashboardData}
               />
             )}
+            
+            {/* Agent Requests Section */}
+            <AgentRequests />
           </div>
 
           {/* Right column - Inquiries, Bookings, Earnings, etc. */}
           <div className="space-y-8">
             <RecentInquiries inquiries={inquiries} />
+            <PropertyAgentManagement />
             <BookingRequests />
             <Earnings />
             <LeaseTemplates />
