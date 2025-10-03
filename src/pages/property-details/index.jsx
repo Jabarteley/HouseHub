@@ -4,6 +4,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Image from '../../components/AppImage';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Import components
 import ImageGallery from './components/ImageGallery';
@@ -15,6 +17,7 @@ import SimilarProperties from './components/SimilarProperties';
 import LoadingState from './components/LoadingState';
 
 const PropertyDetails = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,179 +28,102 @@ const PropertyDetails = () => {
 
   const propertyId = searchParams?.get('id');
 
-  // Mock property data - in real app this would come from API
-  const mockProperty = {
-    id: 1,
-    title: "Modern Downtown Apartment",
-    price: 450000,
-    address: "123 Main Street, Downtown, NY 10001",
-    bedrooms: 2,
-    bathrooms: 2,
-    sqft: 1200,
-    propertyType: "apartment",
-    yearBuilt: 2019,
-    lotSize: null,
-    parkingSpaces: 1,
-    images: [
-      "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pixabay.com/photo/2017/03/28/12/13/chairs-2181968_1280.jpg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop",
-      "https://images.pexels.com/photos/2121121/pexels-photo-2121121.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pixabay.com/photo/2016/12/30/07/59/kitchen-1940174_1280.jpg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop"
-    ],
-    agent: {
-      name: "Sarah Johnson",
-      phone: "(555) 123-4567",
-      email: "sarah.johnson@estatehub.com",
-      avatar: "https://randomuser.me/api/portraits/women/32.jpg",
-      rating: 4.8,
-      reviewsCount: 127,
-      bio: "Sarah is a dedicated real estate professional with over 10 years of experience in the downtown market. She specializes in luxury apartments and condominiums."
-    },
-    coordinates: { lat: 40.7128, lng: -74.0060 },
-    daysOnMarket: 15,
-    mls: "MLS-2024-001234",
-    description: `Beautiful modern apartment in the heart of downtown with stunning city views and premium amenities. This spacious 2-bedroom, 2-bathroom unit features floor-to-ceiling windows, hardwood floors, and a gourmet kitchen with stainless steel appliances.
-
-The open floor plan creates a seamless flow between the living, dining, and kitchen areas, perfect for entertaining. The master bedroom includes a walk-in closet and ensuite bathroom with marble finishes.
-
-Building amenities include a fitness center, rooftop pool, 24-hour concierge service, and valet parking. Located within walking distance of restaurants, shopping, and public transportation with easy access to major highways.`,
-    amenities: [
-      "24-Hour Concierge",
-      "Fitness Center", 
-      "Rooftop Pool",
-      "Valet Parking",
-      "Pet Friendly",
-      "In-Unit Laundry",
-      "Balcony",
-      "Central Air",
-      "Hardwood Floors",
-      "Stainless Steel Appliances"
-    ],
-    schools: [
-      {
-        name: "Downtown Elementary School",
-        type: "Elementary",
-        rating: 8,
-        distance: "0.3 miles"
-      },
-      {
-        name: "Central Middle School", 
-        type: "Middle School",
-        rating: 7,
-        distance: "0.5 miles"
-      },
-      {
-        name: "Metropolitan High School",
-        type: "High School",
-        rating: 9,
-        distance: "0.7 miles"
-      }
-    ],
-    neighborhood: {
-      walkScore: 92,
-      transitScore: 85,
-      bikeScore: 78,
-      nearbyPlaces: [
-        { name: "Central Park", type: "Park", distance: "0.2 miles" },
-        { name: "Downtown Shopping Center", type: "Shopping", distance: "0.1 miles" },
-        { name: "Metro Station", type: "Transit", distance: "0.3 miles" },
-        { name: "Whole Foods Market", type: "Grocery", distance: "0.4 miles" }
-      ]
-    },
-    propertyHistory: [
-      { date: "2024-01-15", event: "Listed for Sale", price: 450000 },
-      { date: "2023-12-01", event: "Price Reduction", price: 465000 },
-      { date: "2023-10-20", event: "Listed for Sale", price: 475000 }
-    ],
-    virtualTour: "https://example.com/virtual-tour",
-    video: "https://example.com/property-video"
-  };
-
-  const similarProperties = [
-    {
-      id: 2,
-      title: "Luxury Suburban House",
-      price: 750000,
-      address: "456 Oak Avenue, Westfield, NJ 07090",
-      bedrooms: 4,
-      bathrooms: 3,
-      sqft: 2800,
-      images: ["https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=800"]
-    },
-    {
-      id: 3,
-      title: "Cozy Studio Loft",
-      price: 280000,
-      address: "789 Industrial Blvd, Brooklyn, NY 11201",
-      bedrooms: 1,
-      bathrooms: 1,
-      sqft: 650,
-      images: ["https://images.pixabay.com/photo/2016/11/18/17/20/living-room-1835923_1280.jpg?auto=compress&cs=tinysrgb&w=800"]
-    },
-    {
-      id: 4,
-      title: "Waterfront Condo",
-      price: 920000,
-      address: "321 Harbor View, Jersey City, NJ 07302",
-      bedrooms: 3,
-      bathrooms: 2,
-      sqft: 1800,
-      images: ["https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop"]
-    }
-  ];
-
   useEffect(() => {
-    const fetchProperty = async () => {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setProperty(mockProperty);
-        setIsSaved(false);
-        setLoading(false);
-      }, 1000);
-    };
-
     if (propertyId) {
       fetchProperty();
     }
-  }, [propertyId]);
+  }, [propertyId, user]);
 
-  const handleSave = () => {
-    setIsSaved(!isSaved);
-    // In real app, sync with backend
-  };
+  const fetchProperty = async () => {
+    try {
+      setLoading(true);
+      const { data: propertyData, error: propertyError } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          price,
+          address,
+          city,
+          state,
+          bedrooms,
+          bathrooms,
+          area_sqft,
+          property_type,
+          year_built,
+          lot_size,
+          parking_spaces,
+          description,
+          amenities,
+          days_on_market,
+          mls,
+          created_at,
+          landlord_id,
+          agent_id,
+          property_images!inner (id, image_url, is_primary),
+          agent:user_profiles!properties_agent_id_fkey (id, full_name, avatar_url),
+          landlord:user_profiles!properties_landlord_id_fkey (id, full_name, avatar_url)
+        `)
+        .eq('id', propertyId)
+        .eq('status', 'active')
+        .single();
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: property?.title,
-        text: `Check out this property: ${property?.title}`,
-        url: window.location?.href
-      });
-    } else {
-      // Fallback to copy to clipboard
-      navigator.clipboard?.writeText(window.location?.href);
+      if (propertyError) throw propertyError;
+
+      // Check if user has saved this property
+      let isPropertySaved = false;
+      if (user) {
+        const { data: savedData, error: savedError } = await supabase
+          .from('saved_properties')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('property_id', propertyId)
+          .single();
+
+        isPropertySaved = !savedError && savedData;
+      }
+
+      // Format the property data to match the component expectations
+      const formattedProperty = {
+        id: propertyData.id,
+        title: propertyData.title,
+        price: propertyData.price,
+        address: `${propertyData.address}, ${propertyData.city}, ${propertyData.state}`,
+        bedrooms: propertyData.bedrooms,
+        bathrooms: propertyData.bathrooms,
+        sqft: propertyData.area_sqft,
+        propertyType: propertyData.property_type,
+        yearBuilt: propertyData.year_built,
+        lotSize: propertyData.lot_size,
+        parkingSpaces: propertyData.parking_spaces,
+        description: propertyData.description,
+        amenities: propertyData.amenities ? (Array.isArray(propertyData.amenities) ? propertyData.amenities : [propertyData.amenities]) : [],
+        daysOnMarket: propertyData.days_on_market || Math.floor((new Date() - new Date(propertyData.created_at)) / (1000 * 60 * 60 * 24)),
+        mls: propertyData.mls,
+        coordinates: null, // No coordinates in current schema
+        images: propertyData.property_images?.map(img => img.image_url) || [],
+        agent: propertyData.agent ? {
+          name: propertyData.agent.full_name,
+          avatar: propertyData.agent.avatar_url
+        } : null,
+        landlord: propertyData.landlord ? {
+          name: propertyData.landlord.full_name,
+          avatar: propertyData.landlord.avatar_url
+        } : null
+      };
+
+      setProperty(formattedProperty);
+      setIsSaved(isPropertySaved);
+    } catch (error) {
+      console.error('Error fetching property:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getBreadcrumbs = () => {
-    const breadcrumbs = [
-      { label: 'Home', path: '/homepage' },
-      { label: 'Properties', path: '/property-listings' },
-      { label: property?.title || 'Property Details', path: null }
-    ];
-    return breadcrumbs;
-  };
-
+  // If still loading or no property found, show loading state
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <LoadingState />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!property) {
@@ -205,22 +131,10 @@ Building amenities include a fitness center, rooftop pool, 24-hour concierge ser
       <div className="min-h-screen bg-background">
         <Header />
         <main className="pt-16 lg:pt-18">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center">
-              <Icon name="Home" size={64} className="text-secondary mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-text-primary mb-2">
-                Property Not Found
-              </h1>
-              <p className="text-text-secondary mb-6">
-                The property you're looking for doesn't exist or has been removed.
-              </p>
-              <Link
-                to="/property-listings"
-                className="inline-flex items-center space-x-2 bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-all duration-200"
-              >
-                <Icon name="ArrowLeft" size={16} />
-                <span>Back to Properties</span>
-              </Link>
+              <h1 className="text-2xl font-bold text-text-primary">Property Not Found</h1>
+              <p className="text-text-secondary mt-2">The property you're looking for doesn't exist or is no longer available.</p>
             </div>
           </div>
         </main>
@@ -228,9 +142,66 @@ Building amenities include a fitness center, rooftop pool, 24-hour concierge ser
     );
   }
 
+  // Function to handle saving/un-saving property
+  const toggleSaveProperty = async () => {
+    if (!user) {
+      alert('Please log in to save properties.');
+      return;
+    }
+
+    if (isSaved) {
+      // Remove from saved
+      const { error } = await supabase
+        .from('saved_properties')
+        .delete()
+        .match({ user_id: user.id, property_id: property.id });
+
+      if (!error) {
+        setIsSaved(false);
+      }
+    } else {
+      // Add to saved
+      const { error } = await supabase
+        .from('saved_properties')
+        .insert([{ user_id: user.id, property_id: property.id }]);
+
+      if (!error) {
+        setIsSaved(true);
+      }
+    }
+  };
+
+  const handleSave = () => {
+    toggleSaveProperty();
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: property?.title,
+        text: `Check out this property: ${property?.title}`,
+        url: window.location.href
+      }).catch(console.error);
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
+
+  // Breadcrumbs
+  const getBreadcrumbs = () => {
+    return [
+      { label: 'Home', path: '/' },
+      { label: 'Properties', path: '/property-listings' },
+      { label: property?.title, path: null }
+    ];
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
       <main className="pt-16 lg:pt-18">
         {/* Breadcrumb */}
         <div className="bg-surface border-b border-border">
@@ -249,7 +220,7 @@ Building amenities include a fitness center, rooftop pool, 24-hour concierge ser
                       {crumb?.label}
                     </Link>
                   ) : (
-                    <span className="text-text-primary font-medium truncate">{crumb?.label}</span>
+                    <span className="text-text-primary font-medium">{crumb?.label}</span>
                   )}
                 </React.Fragment>
               ))}
@@ -300,8 +271,6 @@ Building amenities include a fitness center, rooftop pool, 24-hour concierge ser
               <ImageGallery 
                 images={property?.images}
                 title={property?.title}
-                virtualTour={property?.virtualTour}
-                video={property?.video}
               />
 
               {/* Property Overview */}
@@ -361,33 +330,14 @@ Building amenities include a fitness center, rooftop pool, 24-hour concierge ser
               <div className="card p-6">
                 <div className="flex items-center space-x-4 mb-4">
                   <Image
-                    src={property?.agent?.avatar}
-                    alt={property?.agent?.name}
+                    src={property?.agent?.avatar || '/assets/Images/profile_default.png'}
+                    alt={property?.agent?.name || 'Agent'}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                   <div className="flex-1">
-                    <h3 className="font-semibold text-text-primary">{property?.agent?.name}</h3>
-                    <div className="flex items-center space-x-1 mb-1">
-                      <div className="flex items-center">
-                        {[...Array(5)]?.map((_, i) => (
-                          <Icon
-                            key={i}
-                            name="Star"
-                            size={14}
-                            className={i < Math.floor(property?.agent?.rating) ? 'text-warning fill-current' : 'text-secondary-300'}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-text-secondary">
-                        {property?.agent?.rating} ({property?.agent?.reviewsCount} reviews)
-                      </span>
-                    </div>
+                    <h3 className="font-semibold text-text-primary">{property?.agent?.name || 'Agent'}</h3>
                   </div>
                 </div>
-                
-                <p className="text-sm text-text-secondary mb-4">
-                  {property?.agent?.bio}
-                </p>
                 
                 <div className="space-y-3">
                   <button
@@ -415,10 +365,11 @@ Building amenities include a fitness center, rooftop pool, 24-hour concierge ser
 
           {/* Similar Properties */}
           <div className="mt-12">
-            <SimilarProperties properties={similarProperties} />
+            <SimilarProperties propertyId={property?.id} />
           </div>
         </div>
       </main>
+      
       {/* Contact Form Modal */}
       {showContactForm && (
         <ContactForm

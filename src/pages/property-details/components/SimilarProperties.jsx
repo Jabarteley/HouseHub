@@ -1,35 +1,77 @@
 // src/pages/property-details/components/SimilarProperties.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
+import { supabase } from '../../../lib/supabase';
 
-const SimilarProperties = ({ properties = [] }) => {
+const SimilarProperties = ({ propertyId }) => {
+  const [similarProperties, setSimilarProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef(null);
 
-  // Updated property images with latest real estate photos
-  const updatePropertyImages = (property) => {
-    const updatedImages = [
-      "https://images.pexels.com/photos/2121121/pexels-photo-2121121.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop",
-      "https://images.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg",
-      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop",
-      "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop",
-      "https://images.pixabay.com/photo/2017/04/10/22/28/residence-2219972_1280.jpg",
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=600&fit=crop"
-    ];
+  useEffect(() => {
+    if (propertyId) {
+      fetchSimilarProperties();
+    }
+  }, [propertyId]);
 
-    // Check if property has outdated images
-    const hasOutdatedImages = property?.images?.some(img => 
-      !img?.includes('w=800') || 
-      img?.includes('very-old-image-url') ||
-      img?.includes('outdated-photo')
-    );
+  const fetchSimilarProperties = async () => {
+    try {
+      setLoading(true);
+      // Get the current property to know its type and location for similar properties
+      const { data: currentProperty, error: propError } = await supabase
+        .from('properties')
+        .select('property_type, city, state, bedrooms, bathrooms')
+        .eq('id', propertyId)
+        .single();
 
-    return {
-      ...property,
-      images: hasOutdatedImages ? updatedImages : (property?.images || updatedImages)
-    };
+      if (propError) throw propError;
+
+      // Find similar properties based on type, location, and similar features
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          price,
+          address,
+          city,
+          state,
+          bedrooms,
+          bathrooms,
+          area_sqft,
+          property_images!inner (image_url, is_primary)
+        `)
+        .eq('status', 'active')
+        .eq('property_type', currentProperty.property_type)
+        .or(`city.eq.${currentProperty.city},state.eq.${currentProperty.state}`)
+        .not('id', 'eq', propertyId) // Exclude current property
+        .limit(10)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Format the properties
+      const formattedProps = data?.map(prop => ({
+        id: prop.id,
+        title: prop.title,
+        price: prop.price,
+        address: `${prop.address}, ${prop.city}, ${prop.state}`,
+        bedrooms: prop.bedrooms,
+        bathrooms: prop.bathrooms,
+        sqft: prop.area_sqft,
+        images: prop.property_images?.map(img => img.image_url) || []
+      })) || [];
+
+      setSimilarProperties(formattedProps);
+    } catch (error) {
+      console.error('Error fetching similar properties:', error);
+      setSimilarProperties([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatPrice = (price) => {
@@ -61,28 +103,46 @@ const SimilarProperties = ({ properties = [] }) => {
   };
 
   const handlePrevious = () => {
-    const newIndex = currentIndex > 0 ? currentIndex - 1 : Math.max(0, properties?.length - 3);
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : Math.max(0, similarProperties?.length - 3);
     scrollToIndex(newIndex);
   };
 
   const handleNext = () => {
-    const maxIndex = Math.max(0, properties?.length - 3);
+    const maxIndex = Math.max(0, similarProperties?.length - 3);
     const newIndex = currentIndex < maxIndex ? currentIndex + 1 : 0;
     scrollToIndex(newIndex);
   };
 
-  if (!properties?.length) {
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <Icon name="Home" size={48} className="text-secondary mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-text-primary mb-2">
-          No Similar Properties
-        </h3>
-        <p className="text-text-secondary">
-          We couldn't find similar properties at this time.
-        </p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-text-primary">Similar Properties</h2>
+            <p className="text-text-secondary">Properties you might also like</p>
+          </div>
+        </div>
+        
+        <div className="flex space-x-4 overflow-x-auto pb-4">
+          {[...Array(3)].map((_, idx) => (
+            <div key={idx} className="flex-shrink-0 w-80 md:w-96 animate-pulse">
+              <div className="bg-surface rounded-lg shadow-elevation-1 overflow-hidden">
+                <div className="w-full h-48 bg-secondary-100 rounded-t-lg"></div>
+                <div className="p-4 space-y-3">
+                  <div className="h-5 bg-secondary-100 rounded w-3/4"></div>
+                  <div className="h-6 bg-secondary-100 rounded w-1/2"></div>
+                  <div className="h-4 bg-secondary-100 rounded w-full"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
+  }
+
+  if (!similarProperties?.length) {
+    return null; // Don't render anything if no similar properties
   }
 
   return (
@@ -95,7 +155,7 @@ const SimilarProperties = ({ properties = [] }) => {
         </div>
         
         {/* Desktop Navigation */}
-        {properties?.length > 3 && (
+        {similarProperties?.length > 3 && (
           <div className="hidden md:flex items-center space-x-2">
             <button
               onClick={handlePrevious}
@@ -121,8 +181,7 @@ const SimilarProperties = ({ properties = [] }) => {
           className="flex space-x-4 overflow-x-auto pb-4 no-scrollbar"
           style={{ scrollSnapType: 'x mandatory' }}
         >
-          {properties?.map((property) => {
-            const updatedProperty = updatePropertyImages(property);
+          {similarProperties?.map((property) => {
             return (
               <Link
                 key={property?.id}
@@ -134,7 +193,7 @@ const SimilarProperties = ({ properties = [] }) => {
                   {/* Property Image */}
                   <div className="relative h-48 overflow-hidden">
                     <Image
-                      src={updatedProperty?.images?.[0]}
+                      src={property?.images?.[0] || '/assets/Images/no_image.jpeg'}
                       alt={property?.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -193,9 +252,9 @@ const SimilarProperties = ({ properties = [] }) => {
         </div>
 
         {/* Mobile Navigation Dots */}
-        {properties?.length > 1 && (
+        {similarProperties?.length > 1 && (
           <div className="flex md:hidden justify-center space-x-2 mt-4">
-            {Array.from({ length: Math.ceil(properties?.length / 1) })?.map((_, index) => (
+            {Array.from({ length: Math.ceil(similarProperties?.length / 1) })?.map((_, index) => (
               <button
                 key={index}
                 onClick={() => scrollToIndex(index)}

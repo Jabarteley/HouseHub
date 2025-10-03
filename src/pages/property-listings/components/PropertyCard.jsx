@@ -19,9 +19,19 @@ const PropertyCard = ({
     setIsSaved(property?.isSaved || false);
   }, [property?.isSaved]);
 
-  const primaryImage = property?.images?.find(img => img.is_primary)?.image_url || '/assets/Images/no_image.jpeg';
-  const otherImages = property?.images?.filter(img => !img.is_primary).map(img => img.image_url) || [];
-  const displayImages = [primaryImage, ...otherImages];
+  // Handle different image data structures
+  let displayImages = [];
+  if (property?.property_images && Array.isArray(property?.property_images)) {
+    // New format from database
+    const primaryImage = property?.property_images?.find(img => img.is_primary)?.image_url;
+    const otherImages = property?.property_images?.filter(img => !img.is_primary).map(img => img.image_url);
+    displayImages = primaryImage ? [primaryImage, ...otherImages] : otherImages;
+  } else if (property?.images && Array.isArray(property?.images)) {
+    // Legacy format (mock data or different structure)
+    displayImages = property?.images;
+  }
+  
+  const primaryImage = displayImages[0] || '/assets/Images/no_image.jpeg';
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
@@ -191,7 +201,7 @@ const PropertyCard = ({
                 </div>
                 <div className="flex items-center space-x-1">
                   <Icon name="Square" size={16} />
-                  <span>{formatNumber(property.area_sqft)} sqft</span>
+                  <span>{formatNumber(property.area_sqft || property.sqft)} sqft</span>
                 </div>
               </div>
 
@@ -326,7 +336,7 @@ const PropertyCard = ({
           </div>
           <div className="flex items-center space-x-1">
             <Icon name="Square" size={16} />
-            <span>{formatNumber(property.area_sqft)} sqft</span>
+            <span>{formatNumber(property.area_sqft || property.sqft)} sqft</span>
           </div>
         </div>
 
