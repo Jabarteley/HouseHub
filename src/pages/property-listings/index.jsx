@@ -45,6 +45,11 @@ const PropertyListings = () => {
           bedrooms,
           bathrooms,
           area_sqft,
+          year_built,
+          lot_size,
+          parking_spaces,
+          latitude,
+          longitude,
           status,
           created_at,
           property_images!inner (id, image_url, is_primary),
@@ -79,11 +84,15 @@ const PropertyListings = () => {
         bathrooms: property.bathrooms,
         area_sqft: property.area_sqft,
         propertyType: property.property_type,
+        yearBuilt: property.year_built,
+        lotSize: property.lot_size,
+        parkingSpaces: property.parking_spaces,
         images: property.property_images || [],
         agent: property.agent,
         daysOnMarket: Math.floor((new Date() - new Date(property.created_at)) / (1000 * 60 * 60 * 24)),
         isSaved: savedProperties.includes(property.id),
-        coordinates: null // No coordinates in current schema
+        coordinates: property.latitude && property.longitude ? 
+          { lat: property.latitude, lng: property.longitude } : null
       })) || [];
 
       setProperties(formattedProperties);

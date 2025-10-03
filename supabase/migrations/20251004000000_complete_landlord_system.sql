@@ -162,18 +162,19 @@ CREATE OR REPLACE FUNCTION log_landlord_activity(
   p_action text,
   p_object_type text,
   p_object_id uuid,
-  p_meta jsonb DEFAULT '{}'
+  p_meta jsonb DEFAULT '{}'::jsonb
 )
-RETURNS void AS $
+RETURNS void AS $$
 BEGIN
   INSERT INTO activity_log (user_id, action, object_type, object_id, meta)
   VALUES (auth.uid(), p_action, p_object_type, p_object_id, p_meta);
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
+
 
 -- Add a function to request property verification
 CREATE OR REPLACE FUNCTION request_property_verification(p_property_id bigint)
-RETURNS uuid AS $
+RETURNS uuid AS $$
 DECLARE
   verification_id uuid;
 BEGIN
@@ -187,47 +188,42 @@ BEGIN
   
   RETURN verification_id;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Add a function to request payout
 CREATE OR REPLACE FUNCTION request_payout(p_amount numeric, p_method text)
-RETURNS uuid AS $
+RETURNS uuid AS $$
 DECLARE
   payout_id uuid;
   landlord_id uuid;
 BEGIN
-  -- Get the current user's ID
   landlord_id := auth.uid();
   
-  -- Insert a new payout request
   INSERT INTO payouts (landlord_id, amount, method, status)
   VALUES (landlord_id, p_amount, p_method, 'requested')
   RETURNING id INTO payout_id;
   
-  -- Log the activity
   PERFORM log_landlord_activity('request_payout', 'payout', payout_id, jsonb_build_object('amount', p_amount, 'method', p_method));
   
   RETURN payout_id;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Add a function to upload KYC documents
 CREATE OR REPLACE FUNCTION upload_kyc_document(p_type text, p_document_path text)
-RETURNS uuid AS $
+RETURNS uuid AS $$
 DECLARE
   verification_id uuid;
 BEGIN
-  -- Insert a new KYC verification request
   INSERT INTO verifications (user_id, type, document_path, status)
   VALUES (auth.uid(), p_type, p_document_path, 'pending')
   RETURNING id INTO verification_id;
   
-  -- Log the activity
   PERFORM log_landlord_activity('upload_kyc', 'verification', verification_id, jsonb_build_object('type', p_type));
   
   RETURN verification_id;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Add a function to get landlord dashboard stats
 CREATE OR REPLACE FUNCTION get_landlord_dashboard_stats()
@@ -236,7 +232,7 @@ RETURNS TABLE(
   active_listings bigint,
   total_inquiries bigint,
   monthly_revenue numeric
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT 
@@ -251,7 +247,8 @@ BEGIN
      AND t.payment_status = 'completed' 
      AND t.created_at >= DATE_TRUNC('month', CURRENT_DATE)) as monthly_revenue;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
+
 
 -- Grant necessary permissions
 GRANT EXECUTE ON FUNCTION log_landlord_activity(text, text, uuid, jsonb) TO authenticated;

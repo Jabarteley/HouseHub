@@ -100,7 +100,8 @@ const PropertyDetails = () => {
         amenities: propertyData.amenities ? (Array.isArray(propertyData.amenities) ? propertyData.amenities : [propertyData.amenities]) : [],
         daysOnMarket: propertyData.days_on_market || Math.floor((new Date() - new Date(propertyData.created_at)) / (1000 * 60 * 60 * 24)),
         mls: propertyData.mls,
-        coordinates: null, // No coordinates in current schema
+        coordinates: propertyData.latitude && propertyData.longitude ? 
+          { lat: propertyData.latitude, lng: propertyData.longitude } : null,
         images: propertyData.property_images?.map(img => img.image_url) || [],
         agent: propertyData.agent ? {
           name: propertyData.agent.full_name,
