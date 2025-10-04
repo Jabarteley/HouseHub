@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useGoogleMaps } from '../../../../contexts/GoogleMapsContext';
 import Icon from '../../../../components/AppIcon';
 import { supabase } from '../../../../lib/supabase';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -35,45 +36,14 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
   const [geocodeResult, setGeocodeResult] = useState(null);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
 
-  // Load Google Maps API
+  const { isLoaded: googleMapsLoaded } = useGoogleMaps();
+
+  // Initialize geocoder when Google Maps is loaded
   useEffect(() => {
-    const loadGoogleMaps = async () => {
-      try {
-        // Check if Google Maps is already loaded
-        if (window.google && window.google.maps) {
-          setGeocoder(new window.google.maps.Geocoder());
-          return;
-        }
-
-        // Only load if we have an API key
-        if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-          console.warn('Google Maps API key not found in environment variables');
-          return;
-        }
-
-        // Load Google Maps script
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          if (window.google && window.google.maps) {
-            setGeocoder(new window.google.maps.Geocoder());
-          }
-        };
-        script.onerror = () => {
-          console.error('Error loading Google Maps script');
-        };
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error('Error loading Google Maps:', error);
-      }
-    };
-
-    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-      loadGoogleMaps();
+    if (googleMapsLoaded && window.google && window.google.maps) {
+      setGeocoder(new window.google.maps.Geocoder());
     }
-  }, []);
+  }, [googleMapsLoaded]);
 
   // Predefined amenities list
   const amenitiesList = [
@@ -234,7 +204,7 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
     }
   };
 
-  // Geocode address to get coordinates
+  // Google Maps Geocoding
   const geocodeAddress = async () => {
     if (!geocoder) {
       alert('Google Maps is not loaded. Please check your API key.');
