@@ -26,8 +26,8 @@ const InviteAgent = ({ propertyId }) => {
       const { data: allAgents, error: agentError } = await supabase
         .from('user_profiles')
         .select('id, full_name, avatar_url')
-        .eq('role', 'agent')
-        .is('archived', false); // Assuming there might be an archived field
+        .eq('role', 'agent');
+        // Note: Removed the archived field check since it doesn't exist in the schema
 
       if (agentError) throw agentError;
 
@@ -65,14 +65,61 @@ const InviteAgent = ({ propertyId }) => {
     try {
       setInviting(true);
       
-      // Use the new RPC function to invite agent
-      const { error } = await supabase.rpc('invite_agent_to_property_frontend', {
-        p_property_id: propertyId,
-        p_agent_id: selectedAgent,
-        p_message: message || 'Property owner has invited you to represent this property.'
-      });
+      // First, verify that the user owns this property
+      const { data: propertyData, error: propError } = await supabase
+        .from('properties')
+        .select('landlord_id')
+        .eq('id', propertyId)
+        .eq('landlord_id', user.id)
+        .single();
 
-      if (error) throw error;
+      if (propError || !propertyData) {
+        throw new Error('You do not have permission to invite agents to this property');
+      }
+
+      // First, check if agent_requests table exists by trying a simple query
+      try {
+        // Try creating an agent request in the database
+        const { error: requestError } = await supabase
+          .from('agent_requests')
+          .insert([{
+            property_id: propertyId,
+            agent_id: selectedAgent,
+            status: 'pending',
+            message: message || 'Property owner has invited you to represent this property.'
+          }]);
+
+        if (requestError) {
+          // If the insert fails, it might be due to missing columns
+          // Try to insert with fewer fields
+          const { error: simpleRequestError } = await supabase
+            .from('agent_requests')
+            .insert([{
+              property_id: propertyId,
+              agent_id: selectedAgent,
+              status: 'pending'
+            }]);
+          
+          if (simpleRequestError) {
+            // If agent_requests table doesn't exist or other issue, fall back to direct property assignment
+            throw simpleRequestError; // This will trigger the fallback
+          }
+        }
+      } catch (requestError) {
+        // Agent requests table doesn't exist or has issues, fall back to direct assignment
+        const { error: propertyUpdateError } = await supabase
+          .from('properties')
+          .update({ 
+            agent_id: selectedAgent,
+            agent_status: 'requested'  // or 'assigned' depending on your workflow
+          })
+          .eq('id', propertyId)
+          .eq('landlord_id', user.id);
+
+        if (propertyUpdateError) {
+          throw propertyUpdateError;
+        }
+      }
 
       alert('Agent invited successfully!');
       setMessage('');

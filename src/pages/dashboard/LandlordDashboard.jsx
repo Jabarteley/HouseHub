@@ -213,19 +213,19 @@ const LandlordDashboard = () => {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-12">
           <h1 className="text-3xl font-bold leading-tight">Landlord Dashboard</h1>
-          <p className="mt-2 text-lg text-text-secondary">
+          <p className="mt-3 text-lg text-text-secondary">
             Welcome back, {userProfile?.full_name || 'Landlord'}. Manage your properties and earnings.
           </p>
         </div>
 
         <LandlordStats stats={stats} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Left column - Properties and Images */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-10">
             <PropertyList 
               properties={properties} 
               onStatusChange={handleStatusChange}
@@ -248,7 +248,7 @@ const LandlordDashboard = () => {
           </div>
 
           {/* Right column - Inquiries, Bookings, Earnings, etc. */}
-          <div className="space-y-8">
+          <div className="space-y-10">
             <RecentInquiries inquiries={inquiries} />
             <PropertyAgentManagement />
             <BookingRequests />
@@ -257,7 +257,7 @@ const LandlordDashboard = () => {
             
             <button
               onClick={() => setShowAddPropertyForm(true)}
-              className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors"
+              className="w-full py-4 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors shadow-elevation-1"
             >
               Add New Property
             </button>

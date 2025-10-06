@@ -68,7 +68,7 @@ const PropertyListings = () => {
           .select('property_id')
           .eq('user_id', user.id);
 
-        if (!savedError) {
+        if (!savedError && savedData) {
           savedProperties = savedData?.map(item => item.property_id) || [];
         }
       }

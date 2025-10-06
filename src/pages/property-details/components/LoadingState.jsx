@@ -74,19 +74,6 @@ const LoadingState = () => {
 
           {/* Right Column */}
           <div className="space-y-6">
-            {/* Mortgage Calculator Skeleton */}
-            <div className="card p-6">
-              <div className="h-6 bg-secondary-200 rounded w-3/4 mb-6 animate-pulse"></div>
-              <div className="space-y-6">
-                {[...Array(5)]?.map((_, index) => (
-                  <div key={index}>
-                    <div className="h-4 bg-secondary-200 rounded w-1/2 mb-2 animate-pulse"></div>
-                    <div className="h-10 bg-secondary-200 rounded w-full animate-pulse"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Agent Card Skeleton */}
             <div className="card p-6">
               <div className="flex items-center space-x-4 mb-4">

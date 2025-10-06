@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await supabase?.auth?.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location?.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       });
       
@@ -129,6 +129,7 @@ export const AuthProvider = ({ children }) => {
       return { data, error: null };
     } catch (err) {
       setError(err?.message);
+      console.error('Google sign in error:', err);
       return { data: null, error: err };
     }
   };

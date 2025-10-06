@@ -11,7 +11,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import ImageGallery from './components/ImageGallery';
 import PropertyOverview from './components/PropertyOverview';
 import PropertyTabs from './components/PropertyTabs';
-import MortgageCalculator from './components/MortgageCalculator';
 import ContactForm from './components/ContactForm';
 import SimilarProperties from './components/SimilarProperties';
 import LoadingState from './components/LoadingState';
@@ -23,7 +22,6 @@ const PropertyDetails = () => {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
-  const [showMortgageCalculator, setShowMortgageCalculator] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
 
   const propertyId = searchParams?.get('id');
@@ -78,9 +76,9 @@ const PropertyDetails = () => {
           .select('id')
           .eq('user_id', user.id)
           .eq('property_id', propertyId)
-          .single();
+          .maybeSingle();
 
-        isPropertySaved = !savedError && savedData;
+        isPropertySaved = !savedError && savedData?.id ? true : false;
       }
 
       // Format the property data to match the component expectations
@@ -293,39 +291,7 @@ const PropertyDetails = () => {
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6">
-              {/* Mortgage Calculator */}
-              <div className="hidden lg:block">
-                <MortgageCalculator 
-                  propertyPrice={property?.price}
-                />
-              </div>
-
-              {/* Mobile Mortgage Calculator Toggle */}
-              <div className="lg:hidden">
-                <button
-                  onClick={() => setShowMortgageCalculator(!showMortgageCalculator)}
-                  className="w-full flex items-center justify-between p-4 bg-surface border border-border rounded-lg hover:shadow-elevation-2 transition-all duration-200"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Icon name="Calculator" size={20} className="text-primary" />
-                    <span className="font-medium text-text-primary">Mortgage Calculator</span>
-                  </div>
-                  <Icon 
-                    name="ChevronDown" 
-                    size={16} 
-                    className={`text-text-secondary transition-transform duration-200 ${
-                      showMortgageCalculator ? 'rotate-180' : ''
-                    }`} 
-                  />
-                </button>
-                {showMortgageCalculator && (
-                  <div className="mt-4">
-                    <MortgageCalculator 
-                      propertyPrice={property?.price}
-                    />
-                  </div>
-                )}
-              </div>
+              {/* Agent Contact Card */}
 
               {/* Agent Contact Card */}
               <div className="card p-6">

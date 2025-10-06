@@ -10,7 +10,6 @@ const Footer = () => {
       title: "For Buyers",
       links: [
         { label: "Search Properties", path: "/property-listings" },
-        { label: "Mortgage Calculator", path: "/coming-soon" },
         { label: "Buyer's Guide", path: "/coming-soon" },
         { label: "Neighborhood Info", path: "/coming-soon" }
       ]

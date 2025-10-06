@@ -30,7 +30,7 @@ const SimilarProperties = ({ propertyId }) => {
       if (propError) throw propError;
 
       // Find similar properties based on type, location, and similar features
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
         .select(`
           id,
@@ -46,10 +46,22 @@ const SimilarProperties = ({ propertyId }) => {
         `)
         .eq('status', 'active')
         .eq('property_type', currentProperty.property_type)
-        .or(`city.eq.${currentProperty.city},state.eq.${currentProperty.state}`)
         .not('id', 'eq', propertyId) // Exclude current property
         .limit(10)
         .order('created_at', { ascending: false });
+      
+      // Handle the location search more carefully to avoid parsing issues with special characters
+      if (currentProperty.city && currentProperty.state) {
+        // Instead of using OR with raw strings that might contain special characters,
+        // we'll fetch with one condition and then use client-side filtering if needed
+        query = query.eq('city', currentProperty.city);
+      } else if (currentProperty.city) {
+        query = query.eq('city', currentProperty.city);
+      } else if (currentProperty.state) {
+        query = query.eq('state', currentProperty.state);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 

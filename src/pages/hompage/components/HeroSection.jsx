@@ -15,7 +15,7 @@ const HeroSection = ({ onSearch }) => {
       alt: "Beautiful residential neighborhood"
     },
     {
-      url: "https://images.pixabay.com/photo/2016/06/24/10/47/house-1477041_1280.jpg?auto=compress&cs=tinysrgb&w=2070&q=80",
+      url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
       alt: "Contemporary home with garden"
     }
   ];

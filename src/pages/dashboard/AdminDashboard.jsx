@@ -9,6 +9,12 @@ import PaymentManagement from './components/admin/PaymentManagement';
 import FlaggedContent from './components/admin/FlaggedContent';
 import SupportInbox from './components/admin/SupportInbox';
 import SubscriptionManagement from './components/admin/SubscriptionManagement';
+import PropertyVerification from './components/admin/PropertyVerification';
+import ContentManagement from './components/admin/ContentManagement';
+import ActivityTracking from './components/admin/ActivityTracking';
+import DisputeResolution from './components/admin/DisputeResolution';
+import AccessLevelManagement from './components/admin/AccessLevelManagement';
+import FeaturedListingsManagement from './components/admin/FeaturedListingsManagement';
 import Header from '../../components/ui/Header';
 
 const AdminDashboard = () => {
@@ -34,6 +40,24 @@ const AdminDashboard = () => {
           </div>
           <div className="lg:col-span-3">
             <UserManagement />
+          </div>
+          <div className="lg:col-span-3">
+            <PropertyVerification />
+          </div>
+          <div className="lg:col-span-3">
+            <ContentManagement />
+          </div>
+          <div className="lg:col-span-3">
+            <ActivityTracking />
+          </div>
+          <div className="lg:col-span-3">
+            <DisputeResolution />
+          </div>
+          <div className="lg:col-span-3">
+            <AccessLevelManagement />
+          </div>
+          <div className="lg:col-span-3">
+            <FeaturedListingsManagement />
           </div>
           <div className="lg:col-span-3">
             <CommissionManagement />

@@ -97,35 +97,35 @@ const PropertyAgentManagement = () => {
 
       <div className="p-6">
         {properties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             {properties.map((property) => (
-              <div key={property.id} className="border border-border rounded-lg p-4 hover:bg-secondary-100 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h4 className="font-medium text-text-primary truncate">{property.title}</h4>
+              <div key={property.id} className="border border-border rounded-xl p-6 hover:bg-secondary-100 transition-colors">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-text-primary text-lg truncate">{property.title}</h4>
                     <p className="text-sm text-text-secondary truncate">{property.address}</p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getAgentStatusColor(property.agent_status)}`}>
+                  <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${getAgentStatusColor(property.agent_status)}`}>
                     {property.agent_status}
                   </span>
                 </div>
 
-                <div className="mb-3">
-                  <div className="text-lg font-semibold text-text-primary">{formatPrice(property.price)}</div>
+                <div className="mb-4">
+                  <div className="text-xl font-semibold text-text-primary">{formatPrice(property.price)}</div>
                   <div className="text-sm text-text-secondary">{property.city}, {property.state}</div>
                 </div>
 
                 {property.agent && (
-                  <div className="mb-3 p-2 bg-secondary-100 rounded-md">
+                  <div className="mb-4 p-3 bg-secondary-100 rounded-lg">
                     <div className="text-sm font-medium text-text-primary">Assigned Agent</div>
                     <div className="text-sm text-text-secondary">{property.agent.full_name}</div>
                   </div>
                 )}
 
-                <div className="flex flex-col space-y-2">
+                <div className="space-y-3">
                   {property.agent_status === 'unassigned' && (
                     <div 
-                      className="cursor-pointer text-sm text-primary hover:underline"
+                      className="cursor-pointer text-base text-primary hover:underline font-medium py-2 transition-colors"
                       onClick={() => setSelectedProperty(selectedProperty === property.id ? null : property.id)}
                     >
                       {selectedProperty === property.id ? 'Hide Invitation Form' : 'Invite Agent'}
@@ -133,13 +133,13 @@ const PropertyAgentManagement = () => {
                   )}
                   
                   {(property.agent_status === 'requested' || property.agent_status === 'assigned') && (
-                    <div className="text-sm text-text-secondary">
+                    <div className="text-base text-text-secondary py-2">
                       {property.agent_status === 'requested' ? 'Request pending' : 'Agent assigned'}
                     </div>
                   )}
                   
                   {property.agent_status === 'unassigned' && property.allow_agents && (
-                    <div className="text-xs text-text-tertiary">
+                    <div className="text-sm text-text-tertiary py-1">
                       Agents can discover this property
                     </div>
                   )}
@@ -147,7 +147,7 @@ const PropertyAgentManagement = () => {
 
                 {/* Invite Agent Form - only show if selected */}
                 {selectedProperty === property.id && property.agent_status === 'unassigned' && (
-                  <div className="mt-4 pt-4 border-t border-border">
+                  <div className="mt-6 pt-6 border-t border-border">
                     <InviteAgent propertyId={property.id} />
                   </div>
                 )}
@@ -155,9 +155,9 @@ const PropertyAgentManagement = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
-            <Icon name="Home" size={48} className="mx-auto text-text-secondary mb-4" />
-            <p className="text-text-secondary">No properties added yet</p>
+          <div className="text-center py-12">
+            <Icon name="Home" size={64} className="mx-auto text-text-secondary mb-6" />
+            <p className="text-lg text-text-secondary">No properties added yet</p>
           </div>
         )}
       </div>
