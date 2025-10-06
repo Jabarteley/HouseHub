@@ -77,47 +77,38 @@ const InviteAgent = ({ propertyId }) => {
         throw new Error('You do not have permission to invite agents to this property');
       }
 
-      // First, check if agent_requests table exists by trying a simple query
-      try {
-        // Try creating an agent request in the database
-        const { error: requestError } = await supabase
-          .from('agent_requests')
-          .insert([{
-            property_id: propertyId,
-            agent_id: selectedAgent,
-            status: 'pending',
-            message: message || 'Property owner has invited you to represent this property.'
-          }]);
+      // Try creating an agent request in the database
+      const { error: requestError } = await supabase
+        .from('agent_requests')
+        .insert([{
+          property_id: propertyId,
+          agent_id: selectedAgent,
+          status: 'pending',
+          message: message || 'Property owner has invited you to represent this property.',
+          requested_by: user.id, // Include who requested (the landlord)
+          requested_at: new Date().toISOString()
+        }]);
 
-        if (requestError) {
-          // If the insert fails, it might be due to missing columns
-          // Try to insert with fewer fields
-          const { error: simpleRequestError } = await supabase
-            .from('agent_requests')
-            .insert([{
-              property_id: propertyId,
+      if (requestError) {
+        console.error('Error inserting into agent_requests:', requestError);
+        // Check if it's a table doesn't exist or permission error
+        if (requestError.code === '42P01' || requestError.code === '403') {
+          // Table doesn't exist or no permission, fallback to direct property assignment
+          const { error: propertyUpdateError } = await supabase
+            .from('properties')
+            .update({ 
               agent_id: selectedAgent,
-              status: 'pending'
-            }]);
-          
-          if (simpleRequestError) {
-            // If agent_requests table doesn't exist or other issue, fall back to direct property assignment
-            throw simpleRequestError; // This will trigger the fallback
-          }
-        }
-      } catch (requestError) {
-        // Agent requests table doesn't exist or has issues, fall back to direct assignment
-        const { error: propertyUpdateError } = await supabase
-          .from('properties')
-          .update({ 
-            agent_id: selectedAgent,
-            agent_status: 'requested'  // or 'assigned' depending on your workflow
-          })
-          .eq('id', propertyId)
-          .eq('landlord_id', user.id);
+              agent_status: 'requested'
+            })
+            .eq('id', propertyId)
+            .eq('landlord_id', user.id);
 
-        if (propertyUpdateError) {
-          throw propertyUpdateError;
+          if (propertyUpdateError) {
+            throw propertyUpdateError;
+          }
+        } else {
+          // Some other error occurred
+          throw requestError;
         }
       }
 

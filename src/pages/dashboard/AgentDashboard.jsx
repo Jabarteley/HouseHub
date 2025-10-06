@@ -15,6 +15,7 @@ import UpcomingShowings from './components/agent/UpcomingShowings';
 import AnalyticsSection from './components/agent/AnalyticsSection';
 import QuickListingForm from './components/agent/QuickListingForm';
 import PropertyDiscovery from './components/agent/PropertyDiscovery';
+import AgentRequests from './components/agent/AgentRequests';
 
 const AgentDashboard = () => {
   const { user, userProfile } = useAuth();
@@ -99,6 +100,9 @@ const AgentDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Main Content Area */}
             <div className="lg:col-span-2 space-y-8">
+              {/* Agent Requests */}
+              <AgentRequests />
+              
               {/* Quick Actions */}
               <QuickActions onQuickListing={handleQuickListing} />
               

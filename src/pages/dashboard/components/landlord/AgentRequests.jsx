@@ -45,7 +45,18 @@ const AgentRequests = () => {
           .in('properties.landlord_id', [user.id])
           .order('requested_at', { ascending: false });
 
-        if (!altError) {
+        if (altError) {
+          console.error('Alternative fetch error:', altError);
+          // Check if it's a permission error (403) or table doesn't exist (404)
+          if (altError.code === '403' || altError.code === '42P01' || altError.message.includes('permission') || altError.message.includes('does not exist')) {
+            // If the user doesn't have permission to access agent_requests,
+            // or the table doesn't exist, provide empty list
+            setRequests([]);
+          } else {
+            // For other errors, throw to be handled by catch block
+            throw altError;
+          }
+        } else {
           setRequests(altData || []);
         }
       } catch (altError) {

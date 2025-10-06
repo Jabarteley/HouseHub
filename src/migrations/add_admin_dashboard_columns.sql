@@ -152,6 +152,21 @@ ALTER TABLE banners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agent_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE property_showings ENABLE ROW LEVEL SECURITY;
 
+-- Create reviews table if it doesn't exist
+CREATE TABLE IF NOT EXISTS reviews (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id),
+    property_id UUID REFERENCES properties(id),
+    agent_id UUID REFERENCES auth.users(id), -- For agent reviews
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    title TEXT,
+    comment TEXT,
+    review_type TEXT DEFAULT 'property' CHECK (review_type IN ('property', 'agent', 'landlord')),
+    is_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Create policies for admin access
 CREATE POLICY "Admin can manage announcements" ON announcements 
   FOR ALL TO authenticated 
@@ -160,3 +175,46 @@ CREATE POLICY "Admin can manage announcements" ON announcements
 CREATE POLICY "Admin can manage banners" ON banners 
   FOR ALL TO authenticated 
   USING (EXISTS (SELECT 1 FROM user_profiles WHERE user_profiles.id = auth.uid() AND user_profiles.role = 'admin'));
+
+-- Create policies for reviews
+CREATE POLICY "Users can manage their own reviews" ON reviews
+  FOR ALL TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Everyone can view reviews" ON reviews
+  FOR SELECT TO authenticated
+  USING (true);
+
+-- Create policies for agent requests
+CREATE POLICY "Landlords can manage their agent requests" ON agent_requests
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM properties 
+      WHERE properties.id = agent_requests.property_id
+      AND properties.landlord_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Agents can view their own requests" ON agent_requests
+  FOR SELECT TO authenticated
+  USING (agent_id = auth.uid());
+
+CREATE POLICY "Agents can update their own requests" ON agent_requests
+  FOR UPDATE TO authenticated
+  USING (agent_id = auth.uid());
+
+-- Create policies for property showings
+CREATE POLICY "Property owners can manage showings for their properties" ON property_showings
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM properties
+      WHERE properties.id = property_showings.property_id
+      AND properties.landlord_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Students can view their own showings" ON property_showings
+  FOR ALL TO authenticated
+  USING (student_id = auth.uid());
