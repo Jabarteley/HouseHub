@@ -99,6 +99,7 @@ const MapView = ({
     // Add new markers
     properties.forEach((property) => {
       if (property?.coordinates?.lat && property?.coordinates?.lng) {
+        // Use traditional Marker API for better compatibility
         const marker = new window.google.maps.Marker({
           position: {
             lat: property.coordinates.lat,

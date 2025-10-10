@@ -14,6 +14,8 @@ import PropertyTabs from './components/PropertyTabs';
 import ContactForm from './components/ContactForm';
 import SimilarProperties from './components/SimilarProperties';
 import LoadingState from './components/LoadingState';
+import UnitsList from './components/UnitsList';
+import BookingModal from './components/BookingModal';
 
 const PropertyDetails = () => {
   const { user } = useAuth();
@@ -23,14 +25,46 @@ const PropertyDetails = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  const [selectedUnitBooking, setSelectedUnitBooking] = useState(null);
 
   const propertyId = searchParams?.get('id');
+  const isMultiUnit = searchParams?.get('multi_unit') === 'true';
 
   useEffect(() => {
     if (propertyId) {
       fetchProperty();
+      trackPropertyView();
     }
   }, [propertyId, user]);
+
+  const trackPropertyView = async () => {
+    if (!user || !propertyId) return;
+
+    try {
+      // Try to insert a record in property_views table
+      const { error } = await supabase
+        .from('property_views')
+        .insert([
+          {
+            user_id: user.id,
+            property_id: propertyId,
+            viewed_at: new Date().toISOString()
+          }
+        ]);
+
+      if (error) {
+        // If there's an error, it might be because the record already exists (due to unique constraint)
+        // That's okay, we don't need to track multiple views
+        if (error.code !== '23505') { // 23505 is the unique violation error code
+          console.error('Error tracking property view:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error in trackPropertyView:', error);
+    }
+  };
 
   const fetchProperty = async () => {
     try {
@@ -41,6 +75,7 @@ const PropertyDetails = () => {
           id,
           title,
           price,
+          price_range,
           address,
           city,
           state,
@@ -48,6 +83,7 @@ const PropertyDetails = () => {
           bathrooms,
           area_sqft,
           property_type,
+          property_subtype,
           year_built,
           lot_size,
           parking_spaces,
@@ -56,6 +92,8 @@ const PropertyDetails = () => {
           days_on_market,
           mls,
           created_at,
+          total_units,
+          available_units,
           landlord_id,
           agent_id,
           property_images!inner (id, image_url, is_primary),
@@ -86,11 +124,13 @@ const PropertyDetails = () => {
         id: propertyData.id,
         title: propertyData.title,
         price: propertyData.price,
+        priceRange: propertyData.price_range,
         address: `${propertyData.address}, ${propertyData.city}, ${propertyData.state}`,
         bedrooms: propertyData.bedrooms,
         bathrooms: propertyData.bathrooms,
         sqft: propertyData.area_sqft,
         propertyType: propertyData.property_type,
+        propertySubtype: propertyData.property_subtype,
         yearBuilt: propertyData.year_built,
         lotSize: propertyData.lot_size,
         parkingSpaces: propertyData.parking_spaces,
@@ -98,6 +138,8 @@ const PropertyDetails = () => {
         amenities: propertyData.amenities ? (Array.isArray(propertyData.amenities) ? propertyData.amenities : [propertyData.amenities]) : [],
         daysOnMarket: propertyData.days_on_market || Math.floor((new Date() - new Date(propertyData.created_at)) / (1000 * 60 * 60 * 24)),
         mls: propertyData.mls,
+        totalUnits: propertyData.total_units,
+        availableUnits: propertyData.available_units,
         coordinates: propertyData.latitude && propertyData.longitude ? 
           { lat: propertyData.latitude, lng: propertyData.longitude } : null,
         images: propertyData.property_images?.map(img => img.image_url) || [],
@@ -188,6 +230,47 @@ const PropertyDetails = () => {
     }
   };
 
+  const handleBookUnit = (unit) => {
+    if (!user) {
+      alert('Please log in to book a unit.');
+      return;
+    }
+    setSelectedUnit(unit);
+    setShowBookingModal(true);
+  };
+
+  const handleBookingSubmit = async (bookingData) => {
+    try {
+      // Create a booking record
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([{
+          unit_id: bookingData.unitId,
+          client_id: user.id,
+          status: 'Pending',
+          booking_date: new Date().toISOString().split('T')[0],
+          duration: parseInt(bookingData.duration),
+          start_date: bookingData.startDate,
+          message: bookingData.message,
+          amount: bookingData.unitPrice
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      alert('Booking request submitted successfully! The landlord will review your request.');
+      setShowBookingModal(false);
+      setSelectedUnit(null);
+      
+      // Refresh the property data to update unit availability
+      fetchProperty();
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      alert('Error submitting booking. Please try again.');
+    }
+  };
+
   // Breadcrumbs
   const getBreadcrumbs = () => {
     return [
@@ -248,15 +331,34 @@ const PropertyDetails = () => {
               </button>
             </div>
             <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setShowContactForm(true)}
-                className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:bg-accent-600 transition-all duration-200"
-              >
-                Contact Agent
-              </button>
-              <button className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-700 transition-all duration-200">
-                Schedule Tour
-              </button>
+              {isMultiUnit && property?.total_units > 1 ? (
+                <>
+                  <button
+                    onClick={() => {
+                      if (!user) {
+                        alert('Please log in to view available units.');
+                        return;
+                      }
+                      setActiveTab('units');
+                    }}
+                    className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-700 transition-all duration-200"
+                  >
+                    View Units
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setShowContactForm(true)}
+                    className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:bg-accent-600 transition-all duration-200"
+                  >
+                    Contact Agent
+                  </button>
+                  <button className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-700 transition-all duration-200">
+                    Schedule Tour
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -281,17 +383,99 @@ const PropertyDetails = () => {
                 onContact={() => setShowContactForm(true)}
               />
 
-              {/* Property Tabs */}
-              <PropertyTabs 
-                property={property}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-              />
+              {/* For multi-unit properties, show unit list instead of property tabs */}
+              {isMultiUnit && property?.total_units > 1 ? (
+                <div className="card p-6">
+                  <UnitsList 
+                    propertyId={property?.id} 
+                    onBookUnit={handleBookUnit}
+                  />
+                </div>
+              ) : (
+                <>
+                  {/* Property Tabs for single units */}
+                  <PropertyTabs 
+                    property={property}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                  />
+                </>
+              )}
             </div>
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6">
-              {/* Agent Contact Card */}
+              {/* Property Summary Card - Enhanced for multi-unit properties */}
+              <div className="card p-6">
+                <h3 className="font-semibold text-text-primary mb-4">
+                  {isMultiUnit ? 'Unit Pricing' : 'Property Pricing'}
+                </h3>
+                
+                {isMultiUnit ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Price Range:</span>
+                      <span className="font-medium">{property?.priceRange || `${new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(property?.price)}`}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Units Available:</span>
+                      <span className="font-medium">{property?.availableUnits} of {property?.totalUnits}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Property Type:</span>
+                      <span className="font-medium">{property?.propertySubtype || property?.propertyType}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Price:</span>
+                      <span className="font-medium">{new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(property?.price)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Property Type:</span>
+                      <span className="font-medium">{property?.propertyType}</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4 space-y-2">
+                  {isMultiUnit && property?.total_units > 1 ? (
+                    <button
+                      onClick={() => {
+                        if (!user) {
+                          alert('Please log in to view available units.');
+                          return;
+                        }
+                        setActiveTab('units');
+                      }}
+                      className="w-full bg-primary text-white py-3 rounded-md hover:bg-primary-700 transition-all duration-200"
+                    >
+                      View Available Units
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowContactForm(true)}
+                      className="w-full bg-primary text-white py-3 rounded-md hover:bg-primary-700 transition-all duration-200"
+                    >
+                      Contact Agent
+                    </button>
+                  )}
+                  <button className="w-full bg-accent text-white py-3 rounded-md hover:bg-accent-600 transition-all duration-200">
+                    Schedule Tour
+                  </button>
+                </div>
+              </div>
 
               {/* Agent Contact Card */}
               <div className="card p-6">
@@ -334,6 +518,17 @@ const PropertyDetails = () => {
           <div className="mt-12">
             <SimilarProperties propertyId={property?.id} />
           </div>
+
+          {/* Booking Modal */}
+          {selectedUnit && (
+            <BookingModal
+              unit={selectedUnit}
+              property={property}
+              isOpen={showBookingModal}
+              onClose={() => setShowBookingModal(false)}
+              onSubmit={handleBookingSubmit}
+            />
+          )}
         </div>
       </main>
       

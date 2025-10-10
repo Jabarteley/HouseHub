@@ -167,6 +167,35 @@ CREATE TABLE IF NOT EXISTS reviews (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Create property_wishlist table if it doesn't exist
+CREATE TABLE IF NOT EXISTS property_wishlist (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id),
+    property_id UUID REFERENCES properties(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create notifications table if it doesn't exist
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id),
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    type TEXT DEFAULT 'general' CHECK (type IN ('general', 'booking', 'message', 'review', 'payment', 'application')),
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create property_applications table if it doesn't exist
+CREATE TABLE IF NOT EXISTS property_applications (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    student_id UUID REFERENCES auth.users(id),
+    property_id UUID REFERENCES properties(id),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'viewed', 'accepted', 'rejected', 'withdrawn')),
+    message TEXT,
+    applied_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Create policies for admin access
 CREATE POLICY "Admin can manage announcements" ON announcements 
   FOR ALL TO authenticated 
@@ -184,6 +213,31 @@ CREATE POLICY "Users can manage their own reviews" ON reviews
 CREATE POLICY "Everyone can view reviews" ON reviews
   FOR SELECT TO authenticated
   USING (true);
+
+-- Create policies for wishlist
+CREATE POLICY "Users can manage their own wishlist" ON property_wishlist
+  FOR ALL TO authenticated
+  USING (user_id = auth.uid());
+
+-- Create policies for notifications
+CREATE POLICY "Users can manage their own notifications" ON notifications
+  FOR ALL TO authenticated
+  USING (user_id = auth.uid());
+
+-- Create policies for applications
+CREATE POLICY "Students can manage their own applications" ON property_applications
+  FOR ALL TO authenticated
+  USING (student_id = auth.uid());
+
+CREATE POLICY "Property owners can view applications for their properties" ON property_applications
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM properties
+      WHERE properties.id = property_applications.property_id
+      AND properties.landlord_id = auth.uid()
+    )
+  );
 
 -- Create policies for agent requests
 CREATE POLICY "Landlords can manage their agent requests" ON agent_requests

@@ -85,8 +85,7 @@ const InviteAgent = ({ propertyId }) => {
           agent_id: selectedAgent,
           status: 'pending',
           message: message || 'Property owner has invited you to represent this property.',
-          requested_by: user.id, // Include who requested (the landlord)
-          requested_at: new Date().toISOString()
+          responded_by: user.id // Include who sent the invitation (the landlord)
         }]);
 
       if (requestError) {

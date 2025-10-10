@@ -133,8 +133,8 @@ const PropertyDiscovery = () => {
   const fetchInvitations = async () => {
     try {
       setLoading(prev => ({ ...prev, invitations: true }));
-      // For now, show properties where agent has been invited - this would come from agent_requests table
-      // where status is 'pending' and the agent was invited by an owner/admin
+      // Show properties where agent has been invited by property owners
+      // Invitations have responded_by set to the property owner's ID
       const { data, error } = await supabase
         .from('agent_requests')
         .select(`
@@ -146,7 +146,8 @@ const PropertyDiscovery = () => {
           responded_by_user:user_profiles!responded_by(full_name)
         `)
         .eq('agent_id', user.id)
-        .not('responded_by', 'is', null) // Indicates it was an invitation
+        .not('responded_by', 'is', null) // Property owner has invited this agent
+        .eq('status', 'pending') // Only show pending invitations
         .order('requested_at', { ascending: false });
 
       if (error) throw error;

@@ -12,6 +12,7 @@ import Earnings from './components/landlord/Earnings';
 import LeaseTemplates from './components/landlord/LeaseTemplates';
 import AgentRequests from './components/landlord/AgentRequests';
 import PropertyAgentManagement from './components/landlord/PropertyAgentManagement';
+import UnitManagement from './components/landlord/UnitManagement';
 
 const LandlordDashboard = () => {
   const { user, userProfile } = useAuth();
@@ -234,6 +235,9 @@ const LandlordDashboard = () => {
                 setSelectedProperty(property);
                 setShowAddPropertyForm(true);
               }}
+              onManageUnits={(property) => {
+                setSelectedProperty(property);
+              }}
             />
             
             {selectedProperty && (
@@ -241,6 +245,11 @@ const LandlordDashboard = () => {
                 propertyId={selectedProperty.id} 
                 onImagesUploaded={fetchDashboardData}
               />
+            )}
+            
+            {/* Show Unit Management for multi-unit properties */}
+            {selectedProperty && selectedProperty.total_units && selectedProperty.total_units > 1 && (
+              <UnitManagement propertyId={selectedProperty.id} />
             )}
             
             {/* Agent Requests Section */}

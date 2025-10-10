@@ -42,7 +42,8 @@ const AgentRequests = () => {
               status,
               message,
               requested_at,
-              responded_at
+              responded_at,
+              responded_by
             `)
             .eq('agent_id', user.id)
             .order('requested_at', { ascending: false });
@@ -128,10 +129,18 @@ const AgentRequests = () => {
 
   const handleAcceptRequest = async (requestId) => {
     try {
-      // First, check if the agent_requests table exists by attempting an update
-      let requestAcceptedInTable = false;
+      // First, try to use the database function for accepting agent requests (handles both invitations and requests)
       try {
-        const { error } = await supabase
+        const { error } = await supabase.rpc('accept_agent_request', {
+          request_id: requestId
+        });
+
+        if (error) throw error;
+      } catch (rpcError) {
+        console.log('Could not use accept_agent_request function, using direct update:', rpcError);
+        
+        // Fallback to direct table updates
+        const { error: updateError } = await supabase
           .from('agent_requests')
           .update({ 
             status: 'accepted',
@@ -140,27 +149,21 @@ const AgentRequests = () => {
           .eq('id', requestId)
           .eq('agent_id', user.id); // Ensure agent can only update their own requests
 
-        if (error) throw error;
-        requestAcceptedInTable = true;
-      } catch (tableError) {
-        console.log('Could not update agent_requests table, may not exist:', tableError);
-        // Continue with property update even if agent_requests table doesn't exist
-      }
+        if (updateError) throw updateError;
 
-      // Update property with this agent as the assigned agent
-      const request = requests.find(r => 
-        r.id === requestId || (r.id && r.id.toString() === `prop-${requestId.replace('prop-', '')}`)
-      );
-      if (request && request.property_id) {
-        const { error: propertyError } = await supabase
-          .from('properties')
-          .update({ 
-            agent_id: user.id,
-            agent_status: 'assigned'
-          })
-          .eq('id', request.property_id);
+        // Update property with this agent as the assigned agent
+        const request = requests.find(r => r.id === requestId);
+        if (request && request.property_id) {
+          const { error: propertyError } = await supabase
+            .from('properties')
+            .update({ 
+              agent_id: user.id,
+              agent_status: 'assigned'
+            })
+            .eq('id', request.property_id);
 
-        if (propertyError) throw propertyError;
+          if (propertyError) throw propertyError;
+        }
       }
 
       // Refresh the requests list
@@ -173,22 +176,16 @@ const AgentRequests = () => {
 
   const handleRejectRequest = async (requestId) => {
     try {
-      // First, check if the agent_requests table exists by attempting an update
-      try {
-        const { error } = await supabase
-          .from('agent_requests')
-          .update({ 
-            status: 'rejected',
-            responded_at: new Date().toISOString()
-          })
-          .eq('id', requestId)
-          .eq('agent_id', user.id); // Ensure agent can only update their own requests
+      const { error } = await supabase
+        .from('agent_requests')
+        .update({ 
+          status: 'rejected',
+          responded_at: new Date().toISOString()
+        })
+        .eq('id', requestId)
+        .eq('agent_id', user.id); // Ensure agent can only update their own requests
 
-        if (error) throw error;
-      } catch (tableError) {
-        console.log('Could not update agent_requests table, may not exist:', tableError);
-        // Continue even if agent_requests table doesn't exist
-      }
+      if (error) throw error;
 
       // Refresh the requests list
       fetchAgentRequests();
@@ -242,6 +239,9 @@ const AgentRequests = () => {
                     </p>
                     {request.message && (
                       <p className="text-sm text-text-secondary mt-2 italic">"{request.message}"</p>
+                    )}
+                    {request.responded_by && (
+                      <p className="text-xs text-success mt-1">Invitation from property owner</p>
                     )}
                     <p className="text-xs text-text-tertiary mt-2">
                       Requested: {formatDate(request.requested_at)}

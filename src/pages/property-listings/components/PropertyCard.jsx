@@ -34,6 +34,11 @@ const PropertyCard = ({
   const primaryImage = displayImages[0] || '/assets/Images/no_image.jpeg';
 
   const formatPrice = (price) => {
+    // For multi-unit properties, handle price range
+    if (property.price_range) {
+      return property.price_range;
+    }
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -103,7 +108,7 @@ const PropertyCard = ({
   if (variant === 'list') {
     return (
       <Link
-        to={`/property-details?id=${property.id}`}
+        to={`/property-details?id=${property.id}${property.total_units > 1 ? '&multi_unit=true' : ''}`}
         className={`block bg-surface rounded-lg shadow-elevation-1 hover:shadow-elevation-2 transition-all duration-200 ease-out
                    ${isHighlighted ? 'ring-2 ring-primary shadow-elevation-2' : ''}`}
       >
@@ -173,9 +178,17 @@ const PropertyCard = ({
                   <h3 className="text-lg font-semibold text-text-primary truncate">
                     {property.title}
                   </h3>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatPrice(property.price)}
-                  </p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-2xl font-bold text-primary">
+                      {formatPrice(property.price)}
+                    </p>
+                    {/* Show unit availability for multi-unit properties */}
+                    {property.total_units > 1 && (
+                      <span className="text-sm bg-success-100 text-success-800 px-2 py-1 rounded-full">
+                        {property.available_units} of {property.total_units} available
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 {property.daysOnMarket <= 7 && (
@@ -240,7 +253,7 @@ const PropertyCard = ({
   // Card variant for mobile/grid view
   return (
     <Link
-      to={`/property-details?id=${property.id}`}
+      to={`/property-details?id=${property.id}${property.total_units > 1 ? '&multi_unit=true' : ''}`}
       className="block bg-surface rounded-lg shadow-elevation-1 hover:shadow-elevation-2 transition-all duration-200 ease-out micro-interaction"
     >
       {/* Property Images */}
@@ -314,9 +327,17 @@ const PropertyCard = ({
             <h3 className="text-lg font-semibold text-text-primary truncate">
               {property.title}
             </h3>
-            <p className="text-xl font-bold text-primary">
-              {formatPrice(property.price)}
-            </p>
+            <div className="flex items-center space-x-2">
+              <p className="text-xl font-bold text-primary">
+                {formatPrice(property.price)}
+              </p>
+              {/* Show unit availability for multi-unit properties */}
+              {property.total_units > 1 && (
+                <span className="text-xs bg-success-100 text-success-800 px-1.5 py-0.5 rounded-full">
+                  {property.available_units} of {property.total_units} available
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

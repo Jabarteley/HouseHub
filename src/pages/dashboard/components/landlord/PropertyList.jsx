@@ -111,13 +111,25 @@ const PropertyList = ({ properties, onStatusChange, onDelete, onEdit }) => {
                         <option value="sold">Sold</option>
                       </select>
                     </div>
-                    <button 
-                      onClick={() => onDelete(property.id)} 
-                      className="text-red-600 hover:text-red-800 p-1"
-                      title="Delete Property"
-                    >
-                      <Icon name="Trash2" size={16} />
-                    </button>
+                    <div className="flex space-x-2">
+                      {/* Show Manage Units button for multi-unit properties */}
+                      {property.total_units && property.total_units > 1 && (
+                        <button 
+                          onClick={() => onManageUnits && onManageUnits(property)}
+                          className="text-primary hover:text-primary-700 p-1"
+                          title="Manage Units"
+                        >
+                          <Icon name="Grid3X3" size={16} />
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => onDelete(property.id)} 
+                        className="text-red-600 hover:text-red-800 p-1"
+                        title="Delete Property"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

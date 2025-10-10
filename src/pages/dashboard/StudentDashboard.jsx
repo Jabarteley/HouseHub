@@ -1,191 +1,118 @@
 import React, { useState, useEffect } from 'react';
+import Header from '../../components/ui/Header';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import Header from '../../components/ui/Header';
-import PropertySearch from './components/student/PropertySearch';
-import MapView from './components/student/MapView';
-import SavedProperties from './components/student/SavedProperties';
-import RecentApplications from './components/student/RecentApplications';
-import UpcomingShowings from './components/student/UpcomingShowings';
-import StudentStats from './components/student/StudentStats';
-import ScheduleShowingForm from './components/student/ScheduleShowingForm';
-import PaymentFlow from './components/student/PaymentFlow';
-import Messages from './components/student/Messages';
+import PropertyListings from '../property-listings';
 import Reviews from './components/student/Reviews';
+import Wishlist from './components/student/Wishlist';
+import Notifications from './components/student/Notifications';
+import UpcomingShowings from './components/student/UpcomingShowings';
+import RecentlyViewed from './components/student/RecentlyViewed';
+import Icon from '../../components/AppIcon';
 
 const StudentDashboard = () => {
   const { user, userProfile } = useAuth();
-  const [properties, setProperties] = useState([]);
-  const [savedProperties, setSavedProperties] = useState([]);
-  const [applications, setApplications] = useState([]);
-  const [showings, setShowings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('browse'); // browse, wishlist, reviews, notifications, showings, recently_viewed
   const [stats, setStats] = useState({
-    savedProperties: 0,
-    applications: 0,
-    scheduledShowings: 0,
-    inquiries: 0
+    propertiesViewed: 0,
+    wishlistItems: 0,
+    bookings: 0,
+    reviews: 0
   });
-  const [loading, setLoading] = useState(true);
-  const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [showPaymentFlow, setShowPaymentFlow] = useState(false);
-  const [paymentProperty, setPaymentProperty] = useState(null);
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchDashboardData();
+      fetchDashboardStats();
+      setIsLoading(false);
     }
   }, [user]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardStats = async () => {
+    if (!user) return;
+    
     try {
-      setLoading(true);
+      setLoadingStats(true);
 
-      // Fetch saved properties
-      const { data: savedData, error: savedError } = await supabase
-        .from('saved_properties')
-        .select(`
-          id,
-          property_id,
-          properties (
-            id,
-            title,
-            address,
-            city,
-            state,
-            price,
-            property_type,
-            bedrooms,
-            bathrooms,
-            area_sqft,
-            property_images (image_url, is_primary)
-          )
-        `)
+      // Get properties viewed count
+      let { count: propertiesViewedCount } = await supabase
+        .from('property_views')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      if (savedError) throw savedError;
+      // Get wishlist items count
+      let { count: wishlistCount } = await supabase
+        .from('property_wishlist')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
 
-      // Fetch applications
-      const { data: appData, error: appError } = await supabase
-        .from('property_applications')
-        .select(`
-          id,
-          property_id,
-          status,
-          created_at,
-          properties (title)
-        `)
-        .eq('student_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (appError) throw appError;
-
-      // Fetch showings for this student
-      const { data: showingData, error: showingError } = await supabase
+      // Get bookings count (property_showings)
+      let { count: bookingsCount } = await supabase
         .from('property_showings')
-        .select(`
-          id,
-          property_id,
-          scheduled_date,
-          status,
-          properties (title)
-        `)
-        .eq('student_id', user.id)
-        .order('scheduled_date', { ascending: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', user.id);
 
-      if (showingError) throw showingError;
+      // Get reviews count
+      let { count: reviewsCount } = await supabase
+        .from('reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
 
-      setSavedProperties(savedData || []);
-      setApplications(appData || []);
-      setShowings(showingData || []);
-
-      // Calculate stats
       setStats({
-        savedProperties: savedData?.length || 0,
-        applications: appData?.length || 0,
-        scheduledShowings: showingData?.length || 0,
-        inquiries: 0 // This would come from property_inquiries table
+        propertiesViewed: propertiesViewedCount || 0,
+        wishlistItems: wishlistCount || 0,
+        bookings: bookingsCount || 0,
+        reviews: reviewsCount || 0
       });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      if (error.code === 'PGRST205') {
-        console.warn('One or more tables not found. Please run the migration to create the required tables.');
-        setSavedProperties([]);
-        setApplications([]);
-        setShowings([]);
-      }
-      // Set default values in case of error
+      console.error('Error fetching dashboard stats:', error);
+      // Set default values if there's an error
       setStats({
-        savedProperties: 0,
-        applications: 0,
-        scheduledShowings: 0,
-        inquiries: 0
+        propertiesViewed: 0,
+        wishlistItems: 0,
+        bookings: 0,
+        reviews: 0
       });
     } finally {
-      setLoading(false);
+      setLoadingStats(false);
     }
   };
 
-  const handleScheduleShowing = (property) => {
-    setSelectedProperty(property);
-    setShowScheduleForm(true);
-  };
-
-  const handleShowingScheduled = () => {
-    setShowScheduleForm(false);
-    // Trigger a refresh of all components by updating the refresh trigger
-    setRefreshTrigger(prev => prev + 1);
-  };
-
-  const handlePropertySelect = (property) => {
-    // Could show property details or navigate to property page
-    console.log('Selected property:', property);
-  };
-
-  const handleMakePayment = (property, amount) => {
-    setPaymentProperty(property);
-    setPaymentAmount(amount);
-    setShowPaymentFlow(true);
-  };
-
-  const handleRemoveSavedProperty = async (savedId) => {
-    try {
-      const { error } = await supabase
-        .from('saved_properties')
-        .delete()
-        .eq('id', savedId);
-
-      if (error) throw error;
-
-      // Refresh saved properties
-      fetchDashboardData();
-    } catch (error) {
-      console.error('Error removing saved property:', error);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-16 lg:pt-18">
+        <div className="pt-16 lg:pt-18">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-secondary-100 rounded w-1/3 mb-4"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="h-20 bg-secondary-100 rounded-lg"></div>
-                <div className="h-20 bg-secondary-100 rounded-lg"></div>
-                <div className="h-20 bg-secondary-100 rounded-lg"></div>
-                <div className="h-20 bg-secondary-100 rounded-lg"></div>
-              </div>
+                <div className="h-8 bg-secondary-100 rounded w-1/3 mb-4"></div>
+                <div className="h-4 bg-secondary-100 rounded w-1/2"></div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
+
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case 'browse':
+        return <PropertyListings />;
+      case 'wishlist':
+        return <Wishlist />;
+      case 'reviews':
+        return <Reviews />;
+      case 'notifications':
+        return <Notifications />;
+      case 'showings':
+        return <UpcomingShowings />;
+      case 'recently_viewed':
+        return <RecentlyViewed />;
+      default:
+        return <PropertyListings />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -195,72 +122,193 @@ const StudentDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Dashboard Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-text-primary font-heading mb-2">
-              Student Dashboard
-            </h1>
-            <p className="text-text-secondary">
-              Welcome back, {userProfile?.full_name || 'Student'}. Find your perfect property.
-            </p>
-          </div>
-
-          {/* Stats */}
-          <StudentStats stats={stats} key={`stats-${refreshTrigger}`} />
-
-          {/* Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content Area */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Property Search */}
-              <PropertySearch key={`search-${refreshTrigger}`} onPropertySelect={handlePropertySelect} />
-              
-              {/* Map View */}
-              <MapView key={`map-${refreshTrigger}`} onPropertySelect={handlePropertySelect} />
-              
-              {/* Saved Properties */}
-              <SavedProperties 
-                key={`saved-${refreshTrigger}`}
-                properties={savedProperties} 
-                onRemove={handleRemoveSavedProperty}
-                onScheduleShowing={handleScheduleShowing}
-              />
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-8">
-              {/* Recent Applications */}
-              <RecentApplications key={`apps-${refreshTrigger}`} applications={applications} />
-              
-              {/* Upcoming Showings */}
-              <UpcomingShowings key={`showings-${refreshTrigger}`} showings={showings} />
-              
-              {/* Messages */}
-              <Messages key={`messages-${refreshTrigger}`} />
-              
-              {/* Reviews */}
-              <Reviews key={`reviews-${refreshTrigger}`} />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-text-primary font-heading mb-2">
+                  Student Dashboard
+                </h1>
+                <p className="text-text-secondary">
+                  Browse properties, manage your wishlist, and track your applications
+                </p>
+              </div>
             </div>
           </div>
+
+          {/* Navigation Tabs */}
+          <div className="mb-8 border-b border-border">
+            <nav className="flex space-x-8 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('browse')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'browse'
+                    ? 'border-primary text-text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+                }`}
+              >
+                Browse Properties
+              </button>
+              <button
+                onClick={() => setActiveTab('wishlist')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'wishlist'
+                    ? 'border-primary text-text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+                }`}
+              >
+                Wishlist
+              </button>
+              <button
+                onClick={() => setActiveTab('recently_viewed')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'recently_viewed'
+                    ? 'border-primary text-text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+                }`}
+              >
+                Recently Viewed
+              </button>
+              <button
+                onClick={() => setActiveTab('showings')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'showings'
+                    ? 'border-primary text-text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+                }`}
+              >
+                My Showings
+              </button>
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'reviews'
+                    ? 'border-primary text-text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+                }`}
+              >
+                My Reviews
+              </button>
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'notifications'
+                    ? 'border-primary text-text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+                }`}
+              >
+                Notifications
+              </button>
+            </nav>
+          </div>
+
+          {/* Dashboard Content */}
+          <div className="mb-12">
+            {renderActiveTab()}
+          </div>
+
+          {/* Quick Stats */}
+          {loadingStats ? (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 animate-pulse">
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <div className="w-6 h-6 rounded-full bg-secondary-100"></div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="h-4 bg-secondary-100 rounded w-3/4 mb-2"></div>
+                    <div className="h-6 bg-secondary-100 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <div className="w-6 h-6 rounded-full bg-secondary-100"></div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="h-4 bg-secondary-100 rounded w-3/4 mb-2"></div>
+                    <div className="h-6 bg-secondary-100 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <div className="w-6 h-6 rounded-full bg-secondary-100"></div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="h-4 bg-secondary-100 rounded w-3/4 mb-2"></div>
+                    <div className="h-6 bg-secondary-100 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <div className="w-6 h-6 rounded-full bg-secondary-100"></div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="h-4 bg-secondary-100 rounded w-3/4 mb-2"></div>
+                    <div className="h-6 bg-secondary-100 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Icon name="Home" size={24} className="text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-text-secondary">Properties Viewed</p>
+                    <p className="text-2xl font-bold text-text-primary">{stats.propertiesViewed}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Icon name="Heart" size={24} className="text-green-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-text-secondary">Wishlist Items</p>
+                    <p className="text-2xl font-bold text-text-primary">{stats.wishlistItems}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Icon name="Calendar" size={24} className="text-yellow-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-text-secondary">Bookings</p>
+                    <p className="text-2xl font-bold text-text-primary">{stats.bookings}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-surface p-6 rounded-lg shadow-elevation-1 border border-border">
+                <div className="flex items-center">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Icon name="Star" size={24} className="text-purple-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-text-secondary">Reviews</p>
+                    <p className="text-2xl font-bold text-text-primary">{stats.reviews}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
-
-      {/* Schedule Showing Form Modal */}
-      {showScheduleForm && selectedProperty && (
-        <ScheduleShowingForm
-          property={selectedProperty}
-          onClose={() => setShowScheduleForm(false)}
-          onShowingScheduled={handleShowingScheduled}
-        />
-      )}
-
-      {/* Payment Flow Modal */}
-      {showPaymentFlow && paymentProperty && (
-        <PaymentFlow
-          propertyId={paymentProperty.id}
-          propertyTitle={paymentProperty.title}
-          amount={paymentAmount}
-          type="deposit"
-        />
-      )}
     </div>
   );
 };

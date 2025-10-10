@@ -19,7 +19,14 @@ const Reviews = () => {
   useEffect(() => {
     if (user) {
       fetchReviewsAndProperties();
+      setupRealTimeSubscription();
     }
+    
+    return () => {
+      if (realtimeSubscription) {
+        supabase.removeSubscription(realtimeSubscription);
+      }
+    };
   }, [user]);
 
   const fetchReviewsAndProperties = async () => {
@@ -68,6 +75,45 @@ const Reviews = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const [realtimeSubscription, setRealtimeSubscription] = useState(null);
+
+  const setupRealTimeSubscription = async () => {
+    try {
+      const subscription = supabase
+        .channel('reviews-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'reviews',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (payload.eventType === 'INSERT') {
+              // Add new review to the top of the list
+              setReviews(prev => [payload.new, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              // Update the review in the list
+              setReviews(prev => 
+                prev.map(review => 
+                  review.id === payload.new.id ? payload.new : review
+                )
+              );
+            } else if (payload.eventType === 'DELETE') {
+              // Remove the review from the list
+              setReviews(prev => prev.filter(review => review.id !== payload.old.id));
+            }
+          }
+        )
+        .subscribe();
+
+      setRealtimeSubscription(subscription);
+    } catch (error) {
+      console.error('Error setting up real-time subscription:', error);
     }
   };
 
