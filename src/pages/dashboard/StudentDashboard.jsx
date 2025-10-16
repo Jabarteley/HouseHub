@@ -8,6 +8,7 @@ import Wishlist from './components/student/Wishlist';
 import Notifications from './components/student/Notifications';
 import UpcomingShowings from './components/student/UpcomingShowings';
 import RecentlyViewed from './components/student/RecentlyViewed';
+import MyBookings from './components/student/MyBookings';
 import Icon from '../../components/AppIcon';
 
 const StudentDashboard = () => {
@@ -47,11 +48,11 @@ const StudentDashboard = () => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      // Get bookings count (property_showings)
+      // Get bookings count (unit bookings)
       let { count: bookingsCount } = await supabase
-        .from('property_showings')
+        .from('bookings')
         .select('*', { count: 'exact', head: true })
-        .eq('student_id', user.id);
+        .eq('client_id', user.id);
 
       // Get reviews count
       let { count: reviewsCount } = await supabase
@@ -109,6 +110,8 @@ const StudentDashboard = () => {
         return <UpcomingShowings />;
       case 'recently_viewed':
         return <RecentlyViewed />;
+      case 'my_bookings':
+        return <MyBookings />;
       default:
         return <PropertyListings />;
     }
@@ -166,6 +169,16 @@ const StudentDashboard = () => {
                 }`}
               >
                 Recently Viewed
+              </button>
+              <button
+                onClick={() => setActiveTab('my_bookings')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'my_bookings'
+                    ? 'border-primary text-text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+                }`}
+              >
+                My Bookings
               </button>
               <button
                 onClick={() => setActiveTab('showings')}
@@ -288,7 +301,7 @@ const StudentDashboard = () => {
                     <Icon name="Calendar" size={24} className="text-yellow-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-text-secondary">Bookings</p>
+                    <p className="text-sm font-medium text-text-secondary">Unit Bookings</p>
                     <p className="text-2xl font-bold text-text-primary">{stats.bookings}</p>
                   </div>
                 </div>

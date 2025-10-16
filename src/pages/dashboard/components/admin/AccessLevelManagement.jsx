@@ -20,28 +20,23 @@ const AccessLevelManagement = () => {
     try {
       setLoading(true);
       
-      // Get all users - only fetch existing columns
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, full_name, role')
-        .order('id', { ascending: false }); // Order by id instead of created_at
+        .select('id, full_name, role, is_verified, created_at')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Filter for admin-like roles after fetching all users
       const adminUsers = data.filter(user => 
         user.role === 'admin' || 
         user.role === 'verifier' || 
         user.role === 'moderator' ||
-        user.role === 'landlord' // Include landlords as potential sub-admins
+        user.role === 'landlord'
       );
 
-      // Transform the data to match what the UI expects
       const usersWithEmail = adminUsers.map(user => ({
         ...user,
         email: `user-${user.id.substring(0, 8)}@email-hidden`, // A placeholder since we can't access auth emails without proper permissions
-        is_verified: true, // Default to true since column doesn't exist
-        created_at: 'N/A' // Show N/A since column doesn't exist
       }));
 
       setUsers(usersWithEmail || []);
@@ -59,10 +54,10 @@ const AccessLevelManagement = () => {
     }
 
     try {
-      // First create the user in Supabase Auth
+      // First create the user in Supabase Auth without a password.
+      // Supabase will send an invitation email for the user to set their own password.
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newSubAdmin.email,
-        password: 'defaultpassword123!', // In a real app, send password reset email
         email_confirm: true
       });
 

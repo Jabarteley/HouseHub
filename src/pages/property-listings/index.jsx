@@ -100,7 +100,9 @@ const PropertyListings = () => {
         daysOnMarket: Math.floor((new Date() - new Date(property.created_at)) / (1000 * 60 * 60 * 24)),
         isSaved: savedProperties.includes(property.id),
         coordinates: property.latitude && property.longitude ? 
-          { lat: property.latitude, lng: property.longitude } : null
+          { lat: property.latitude, lng: property.longitude } : null,
+        // Add flag to indicate if property has multiple units
+        hasUnits: (property.total_units && property.total_units > 1) || false
       })) || [];
 
       setProperties(formattedProperties);

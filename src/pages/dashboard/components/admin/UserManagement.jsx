@@ -20,20 +20,16 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // Fetch users from user_profiles table - only fetch existing columns
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, full_name, role') // Remove created_at since it doesn't exist
-        .order('id', { ascending: false }); // Order by id instead of created_at
+        .select('id, full_name, role, is_verified, created_at')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Transform the data to match what the UI expects
       const usersWithDefaultEmail = data.map(user => ({
         ...user,
         email: `user-${user.id.substring(0, 8)}@email-hidden`, // A placeholder since we can't access auth emails without proper permissions
-        is_verified: true, // Default to true since column doesn't exist
-        created_at: 'N/A' // Show N/A since column doesn't exist
       }));
 
       setUsers(usersWithDefaultEmail || []);
@@ -53,7 +49,6 @@ const UserManagement = () => {
 
       if (error) throw error;
 
-      // Refresh the list
       fetchUsers();
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -61,10 +56,16 @@ const UserManagement = () => {
   };
 
   const handleVerificationToggle = async (userId, currentStatus) => {
-    // is_verified column doesn't exist, so we'll simulate functionality
-    // In a real app, you'd need to add this column to the table
-    console.log(`Toggling verification for user ${userId}`);
-    fetchUsers(); // Refresh the list
+    try {
+        const { error } = await supabase
+            .from('user_profiles')
+            .update({ is_verified: !currentStatus })
+            .eq('id', userId);
+        if (error) throw error;
+        fetchUsers();
+    } catch (error) {
+        console.error('Error toggling verification status:', error);
+    }
   };
 
   const handleDeleteUser = async (userId) => {
@@ -80,7 +81,6 @@ const UserManagement = () => {
 
       if (error) throw error;
 
-      // Refresh the list
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -94,16 +94,13 @@ const UserManagement = () => {
     }
 
     try {
-      // First create the user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUser.email,
-        password: 'defaultpassword123!', // In a real app, send password reset email
         email_confirm: true
       });
 
       if (authError) throw authError;
 
-      // Then create the user profile
       const { error: profileError } = await supabase
         .from('user_profiles')
         .insert([{
@@ -115,7 +112,6 @@ const UserManagement = () => {
 
       if (profileError) throw profileError;
 
-      // Reset form and refresh users
       setNewUser({
         email: '',
         full_name: '',
@@ -252,7 +248,6 @@ const UserManagement = () => {
                   <button
                     onClick={() => handleVerificationToggle(user.id, user.is_verified)}
                     className={`px-2 py-1 rounded text-xs ${user.is_verified ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}
-                    disabled
                   >
                     {user.is_verified ? 'Unverify' : 'Verify'}
                   </button>

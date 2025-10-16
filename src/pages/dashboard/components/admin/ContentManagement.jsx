@@ -17,12 +17,29 @@ const ContentManagement = () => {
   const fetchContent = async () => {
     try {
       setLoading(true);
-      
-      // Since announcements and banners tables likely don't exist, let's initialize with empty arrays
-      setAnnouncements([]);
-      setBanners([]);
+      const { data: announcementsData, error: announcementsError } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (announcementsError) throw announcementsError;
+      setAnnouncements(announcementsData || []);
+
+      const { data: bannersData, error: bannersError } = await supabase
+        .from('banners')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (bannersError) throw bannersError;
+      setBanners(bannersData || []);
     } catch (error) {
       console.error('Error fetching content:', error);
+      if (error.message.includes('relation "public.announcements" does not exist')) {
+        setAnnouncements([]);
+      }
+      if (error.message.includes('relation "public.banners" does not exist')) {
+        setBanners([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -34,20 +51,15 @@ const ContentManagement = () => {
       return;
     }
 
-    // Since the announcements table doesn't exist, we'll simulate adding an announcement
-    const newAnnouncementObj = {
-      id: Date.now(), // Use timestamp as ID for demo
-      title: newAnnouncement.title,
-      content: newAnnouncement.content,
-      priority: newAnnouncement.priority,
-      created_at: new Date().toISOString()
-    };
-
-    setAnnouncements([newAnnouncementObj, ...announcements]);
-    setNewAnnouncement({ title: '', content: '', priority: 'normal' });
-
-    // Show a message to indicate this is simulated functionality
-    alert('This is simulated functionality. In a real application, this would be saved to the database.');
+    try {
+      const { error } = await supabase.from('announcements').insert([newAnnouncement]);
+      if (error) throw error;
+      setNewAnnouncement({ title: '', content: '', priority: 'normal' });
+      fetchContent();
+    } catch (error) {
+      console.error('Error adding announcement:', error);
+      alert('Failed to add announcement.');
+    }
   };
 
   const handleAddBanner = async () => {
@@ -56,21 +68,15 @@ const ContentManagement = () => {
       return;
     }
 
-    // Since the banners table doesn't exist, we'll simulate adding a banner
-    const newBannerObj = {
-      id: Date.now(), // Use timestamp as ID for demo
-      title: newBanner.title,
-      content: newBanner.content,
-      link: newBanner.link,
-      is_active: newBanner.is_active,
-      created_at: new Date().toISOString()
-    };
-
-    setBanners([newBannerObj, ...banners]);
-    setNewBanner({ title: '', content: '', link: '', is_active: true });
-
-    // Show a message to indicate this is simulated functionality
-    alert('This is simulated functionality. In a real application, this would be saved to the database.');
+    try {
+      const { error } = await supabase.from('banners').insert([newBanner]);
+      if (error) throw error;
+      setNewBanner({ title: '', content: '', link: '', is_active: true });
+      fetchContent();
+    } catch (error) {
+      console.error('Error adding banner:', error);
+      alert('Failed to add banner.');
+    }
   };
 
   const handleDeleteAnnouncement = async (id) => {
@@ -78,8 +84,14 @@ const ContentManagement = () => {
       return;
     }
     
-    // Delete from in-memory state since no database table exists
-    setAnnouncements(announcements.filter(announcement => announcement.id !== id));
+    try {
+      const { error } = await supabase.from('announcements').delete().eq('id', id);
+      if (error) throw error;
+      fetchContent();
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Failed to delete announcement.');
+    }
   };
 
   const handleDeleteBanner = async (id) => {
@@ -87,15 +99,25 @@ const ContentManagement = () => {
       return;
     }
     
-    // Delete from in-memory state since no database table exists
-    setBanners(banners.filter(banner => banner.id !== id));
+    try {
+      const { error } = await supabase.from('banners').delete().eq('id', id);
+      if (error) throw error;
+      fetchContent();
+    } catch (error) {
+      console.error('Error deleting banner:', error);
+      alert('Failed to delete banner.');
+    }
   };
 
   const handleToggleBanner = async (id, currentStatus) => {
-    // Update in-memory state since no database table exists
-    setBanners(banners.map(banner => 
-      banner.id === id ? { ...banner, is_active: !currentStatus } : banner
-    ));
+    try {
+      const { error } = await supabase.from('banners').update({ is_active: !currentStatus }).eq('id', id);
+      if (error) throw error;
+      fetchContent();
+    } catch (error) {
+      console.error('Error toggling banner status:', error);
+      alert('Failed to update banner status.');
+    }
   };
 
   if (loading) {

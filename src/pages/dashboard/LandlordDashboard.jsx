@@ -192,6 +192,17 @@ const LandlordDashboard = () => {
     }
   };
 
+  const handleManageUnits = (property) => {
+    setSelectedProperty(property);
+    // Scroll to the UnitManagement component when a property's units are to be managed
+    setTimeout(() => {
+      const unitManagementElement = document.getElementById('unit-management-section');
+      if (unitManagementElement) {
+        unitManagementElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-text-primary">
@@ -235,9 +246,7 @@ const LandlordDashboard = () => {
                 setSelectedProperty(property);
                 setShowAddPropertyForm(true);
               }}
-              onManageUnits={(property) => {
-                setSelectedProperty(property);
-              }}
+              onManageUnits={handleManageUnits}
             />
             
             {selectedProperty && (
@@ -248,9 +257,11 @@ const LandlordDashboard = () => {
             )}
             
             {/* Show Unit Management for multi-unit properties */}
+            <div id="unit-management-section">
             {selectedProperty && selectedProperty.total_units && selectedProperty.total_units > 1 && (
               <UnitManagement propertyId={selectedProperty.id} />
             )}
+            </div>
             
             {/* Agent Requests Section */}
             <AgentRequests />

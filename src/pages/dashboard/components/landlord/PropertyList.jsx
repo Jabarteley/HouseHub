@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Icon from '../../../../components/AppIcon';
 
-const PropertyList = ({ properties, onStatusChange, onDelete, onEdit }) => {
+const PropertyList = ({ properties, onStatusChange, onDelete, onEdit, onManageUnits }) => {
   const [activeTab, setActiveTab] = useState('all');
 
   const filteredProperties = activeTab === 'all' 
@@ -112,10 +112,10 @@ const PropertyList = ({ properties, onStatusChange, onDelete, onEdit }) => {
                       </select>
                     </div>
                     <div className="flex space-x-2">
-                      {/* Show Manage Units button for multi-unit properties */}
-                      {property.total_units && property.total_units > 1 && (
+                      {/* Show Manage Units button for multi-unit properties if callback exists */}
+                      {property.total_units && property.total_units > 1 && onManageUnits && (
                         <button 
-                          onClick={() => onManageUnits && onManageUnits(property)}
+                          onClick={() => onManageUnits(property)}
                           className="text-primary hover:text-primary-700 p-1"
                           title="Manage Units"
                         >

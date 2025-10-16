@@ -15,6 +15,7 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
     zip_code: '', 
     price: '', 
     property_type: 'House', 
+    property_subtype: '', 
     bedrooms: '', 
     bathrooms: '', 
     area_sqft: '',
@@ -25,7 +26,10 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
     longitude: null,
     mls: '',
     amenities: [],
-    status: 'draft'
+    status: 'draft',
+    total_units: 1,
+    available_units: 1,
+    price_range: ''
   });
   const [existingPhotos, setExistingPhotos] = useState([]);
   const [newPhotos, setNewPhotos] = useState([]);
@@ -81,6 +85,7 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
         zip_code: property.zip_code || '',
         price: property.price || '',
         property_type: property.property_type || 'House',
+        property_subtype: property.property_subtype || '',
         bedrooms: property.bedrooms || '',
         bathrooms: property.bathrooms || '',
         area_sqft: property.area_sqft || '',
@@ -91,7 +96,10 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
         longitude: property.longitude || null,
         mls: property.mls || '',
         amenities: property.amenities || [],
-        status: property.status || 'draft'
+        status: property.status || 'draft',
+        total_units: property.total_units || 1,
+        available_units: property.available_units || 1,
+        price_range: property.price_range || ''
       });
       
       setSelectedAmenities(property.amenities || []);
@@ -109,6 +117,7 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
         zip_code: '', 
         price: '', 
         property_type: 'House', 
+        property_subtype: '', 
         bedrooms: '', 
         bathrooms: '', 
         area_sqft: '',
@@ -119,7 +128,10 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
         longitude: null,
         mls: '',
         amenities: [],
-        status: 'draft'
+        status: 'draft',
+        total_units: 1,
+        available_units: 1,
+        price_range: ''
       });
       setSelectedAmenities([]);
     }
@@ -127,7 +139,14 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // For number inputs, convert to number if valid
+    let processedValue = value;
+    if (['total_units', 'price', 'area_sqft', 'year_built', 'lot_size', 'parking_spaces'].includes(name)) {
+      processedValue = value === '' ? null : Number(value);
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
     
     // Clear error when user starts typing
     if (errors[name]) {
@@ -260,10 +279,11 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
     if (!formData.city.trim()) newErrors.city = 'City is required';
     if (!formData.state.trim()) newErrors.state = 'State is required';
     if (!formData.zip_code.trim()) newErrors.zip_code = 'ZIP code is required';
-    if (!formData.price) newErrors.price = 'Price is required';
+    if (formData.price === null || formData.price === '' || parseFloat(formData.price) <= 0) newErrors.price = 'Price is required';
     if (!formData.property_type) newErrors.property_type = 'Property type is required';
-    if (!formData.bedrooms) newErrors.bedrooms = 'Bedrooms is required';
-    if (!formData.bathrooms) newErrors.bathrooms = 'Bathrooms is required';
+    if (formData.bedrooms === null || formData.bedrooms === '' || parseInt(formData.bedrooms) < 0) newErrors.bedrooms = 'Bedrooms is required';
+    if (formData.bathrooms === null || formData.bathrooms === '' || parseFloat(formData.bathrooms) < 0) newErrors.bathrooms = 'Bathrooms is required';
+    if (formData.total_units === null || formData.total_units === '' || parseInt(formData.total_units) < 1) newErrors.total_units = 'Total units is required';
     
     const price = parseFloat(formData.price);
     if (isNaN(price) || price <= 0) {
@@ -278,6 +298,11 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
     const bathrooms = parseFloat(formData.bathrooms);
     if (isNaN(bathrooms) || bathrooms < 0) {
       newErrors.bathrooms = 'Please enter a valid number of bathrooms';
+    }
+    
+    const totalUnits = parseInt(formData.total_units);
+    if (isNaN(totalUnits) || totalUnits < 1) {
+      newErrors.total_units = 'Please enter a valid number of total units (at least 1)';
     }
     
     setErrors(newErrors);
@@ -300,13 +325,35 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
       
       if (property) {
         // Update existing property
+        const propertyData = {
+          ...formData, 
+          landlord_id: user.id,
+          amenities: selectedAmenities,
+        };
+        
+        // Ensure numeric values are properly set
+        if (propertyData.price !== null && propertyData.price !== '') propertyData.price = parseFloat(propertyData.price);
+        if (propertyData.total_units !== null && propertyData.total_units !== '') propertyData.total_units = parseInt(propertyData.total_units);
+        if (propertyData.bedrooms !== null && propertyData.bedrooms !== '') propertyData.bedrooms = parseInt(propertyData.bedrooms);
+        if (propertyData.bathrooms !== null && propertyData.bathrooms !== '') propertyData.bathrooms = parseFloat(propertyData.bathrooms);
+        if (propertyData.area_sqft !== null && propertyData.area_sqft !== '') propertyData.area_sqft = parseFloat(propertyData.area_sqft);
+        if (propertyData.year_built !== null && propertyData.year_built !== '') propertyData.year_built = parseInt(propertyData.year_built);
+        if (propertyData.lot_size !== null && propertyData.lot_size !== '') propertyData.lot_size = parseFloat(propertyData.lot_size);
+        if (propertyData.parking_spaces !== null && propertyData.parking_spaces !== '') propertyData.parking_spaces = parseInt(propertyData.parking_spaces);
+        
+        // Update available units
+        propertyData.available_units = propertyData.total_units || 1;
+        
+        // Remove undefined values to prevent database issues
+        Object.keys(propertyData).forEach(key => {
+          if (propertyData[key] === undefined) {
+            delete propertyData[key];
+          }
+        });
+        
         const { data, error } = await supabase
           .from('properties')
-          .update({ 
-            ...formData, 
-            landlord_id: user.id,
-            amenities: selectedAmenities
-          })
+          .update(propertyData)
           .eq('id', property.id)
           .select()
           .single();
@@ -318,14 +365,36 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
         onPropertyUpdated && onPropertyUpdated();
       } else {
         // Insert new property
+        const propertyData = {
+          ...formData, 
+          landlord_id: user.id,
+          amenities: selectedAmenities,
+          status: 'active', // Default to active when created
+        };
+        
+        // Ensure numeric values are properly set
+        if (propertyData.price !== null && propertyData.price !== '') propertyData.price = parseFloat(propertyData.price);
+        if (propertyData.total_units !== null && propertyData.total_units !== '') propertyData.total_units = parseInt(propertyData.total_units);
+        if (propertyData.bedrooms !== null && propertyData.bedrooms !== '') propertyData.bedrooms = parseInt(propertyData.bedrooms);
+        if (propertyData.bathrooms !== null && propertyData.bathrooms !== '') propertyData.bathrooms = parseFloat(propertyData.bathrooms);
+        if (propertyData.area_sqft !== null && propertyData.area_sqft !== '') propertyData.area_sqft = parseFloat(propertyData.area_sqft);
+        if (propertyData.year_built !== null && propertyData.year_built !== '') propertyData.year_built = parseInt(propertyData.year_built);
+        if (propertyData.lot_size !== null && propertyData.lot_size !== '') propertyData.lot_size = parseFloat(propertyData.lot_size);
+        if (propertyData.parking_spaces !== null && propertyData.parking_spaces !== '') propertyData.parking_spaces = parseInt(propertyData.parking_spaces);
+        
+        // Set available units to total units initially
+        propertyData.available_units = propertyData.total_units || 1;
+        
+        // Remove undefined values to prevent database issues
+        Object.keys(propertyData).forEach(key => {
+          if (propertyData[key] === undefined) {
+            delete propertyData[key];
+          }
+        });
+        
         const { data, error } = await supabase
           .from('properties')
-          .insert([{
-            ...formData, 
-            landlord_id: user.id,
-            amenities: selectedAmenities,
-            status: 'active' // Default to active when created
-          }])
+          .insert([propertyData])
           .select()
           .single();
 
@@ -628,6 +697,70 @@ const PropertyForm = ({ property, onClose, onPropertyAdded, onPropertyUpdated })
                     placeholder="MLS #" 
                     className="w-full p-2 border rounded" 
                   />
+                </div>
+              </div>
+              
+              {/* Multi-Unit Property Details */}
+              <div className="mt-6">
+                <h4 className="text-md font-medium text-text-primary mb-3">Unit Booking Information</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">
+                      Total Units
+                    </label>
+                    <input
+                      type="number"
+                      name="total_units"
+                      value={formData.total_units ?? ''}
+                      onChange={handleInputChange}
+                      placeholder="Total units"
+                      className="w-full p-2 border rounded"
+                      min="1"
+                    />
+                    {errors.total_units && <p className="text-error text-xs mt-1">{errors.total_units}</p>}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">
+                      Property Subtype
+                    </label>
+                    <select
+                      name="property_subtype"
+                      value={formData.property_subtype}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Select subtype</option>
+                      <option value="Apartment Complex">Apartment Complex</option>
+                      <option value="Hostel">Hostel</option>
+                      <option value="Dormitory">Dormitory</option>
+                      <option value="Condo Building">Condo Building</option>
+                      <option value="Studio Complex">Studio Complex</option>
+                      <option value="Single Unit">Single Unit</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">
+                      Price Range
+                    </label>
+                    <input
+                      type="text"
+                      name="price_range"
+                      value={formData.price_range || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g., $300-500"
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <p className="text-sm text-text-secondary">
+                    <span className="font-medium">Note:</span> If your property has multiple units (e.g., apartment complex, hostel), 
+                    set the total number of units. You can add individual unit details after creating the property.
+                  </p>
                 </div>
               </div>
             </div>

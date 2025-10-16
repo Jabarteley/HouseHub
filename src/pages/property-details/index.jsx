@@ -16,6 +16,7 @@ import SimilarProperties from './components/SimilarProperties';
 import LoadingState from './components/LoadingState';
 import UnitsList from './components/UnitsList';
 import BookingModal from './components/BookingModal';
+import UserBookingStatus from './components/UserBookingStatus';
 
 const PropertyDetails = () => {
   const { user } = useAuth();
@@ -30,7 +31,8 @@ const PropertyDetails = () => {
   const [selectedUnitBooking, setSelectedUnitBooking] = useState(null);
 
   const propertyId = searchParams?.get('id');
-  const isMultiUnit = searchParams?.get('multi_unit') === 'true';
+  // Check if property is multi-unit from the property data itself
+  const isMultiUnit = property && property.totalUnits > 1;
 
   useEffect(() => {
     if (propertyId) {
@@ -46,13 +48,14 @@ const PropertyDetails = () => {
       // Try to insert a record in property_views table
       const { error } = await supabase
         .from('property_views')
-        .insert([
+        .upsert(
           {
             user_id: user.id,
             property_id: propertyId,
-            viewed_at: new Date().toISOString()
-          }
-        ]);
+            viewed_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,property_id', ignoreDuplicates: true }
+        );
 
       if (error) {
         // If there's an error, it might be because the record already exists (due to unique constraint)
@@ -383,6 +386,11 @@ const PropertyDetails = () => {
                 onContact={() => setShowContactForm(true)}
               />
 
+              {/* Show booking status for authenticated users */}
+              {user && (
+                <UserBookingStatus propertyId={property?.id} />
+              )}
+
               {/* For multi-unit properties, show unit list instead of property tabs */}
               {isMultiUnit && property?.total_units > 1 ? (
                 <div className="card p-6">
@@ -429,6 +437,10 @@ const PropertyDetails = () => {
                     <div className="flex justify-between">
                       <span className="text-text-secondary">Property Type:</span>
                       <span className="font-medium">{property?.propertySubtype || property?.propertyType}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Booking Type:</span>
+                      <span className="font-medium text-success-600">Unit Booking Available</span>
                     </div>
                   </div>
                 ) : (
